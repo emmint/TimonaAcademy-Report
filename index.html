@@ -278,8 +278,13 @@ const GID = {
   GSC_QUERY:'1199678687', GSC_PAGE:'1772340298',
   KEYWORD_MASTER:'580417143', KEYWORD_RANK_WEEKLY:'165606809',
   AHREFS_KPI:'1681573242', AI_RESPONSES:'379237336', SITE_ISSUES:'1118437563',
-  AI_RANK_LOG:'1522076847', USP_CHECKLIST:'540045851', USP_CHECK_LOG:'921116997'
+  AI_RANK_LOG:'1522076847', USP_CHECKLIST:'540045851', USP_CHECK_LOG:'921116997',
+  GA4_DAILY:''      // tab tạo sau, chưa có GID — đọc bằng tên tab
 };
+/* Cột bắt buộc của mỗi tab. Dùng để chặn một cái bẫy của Google:
+   gọi gviz với tên tab không tồn tại thì nó trả về tab ĐẦU TIÊN kèm mã 200,
+   không hề báo lỗi. Không kiểm cột thì dashboard sẽ nuốt nhầm dữ liệu tab khác. */
+const COT_BUOC = { GA4_DAILY:['ngay','sessions'] };
 const TABS = [
   {id:0,n:'0',t:'Tổng quan'},
   {id:1,n:'1',t:'Traffic'},
@@ -314,32 +319,42 @@ function parseCSV(txt){
   if(f!=='' || row.length){ row.push(f); rows.push(row); }
   if(!rows.length) return [];
   const head = rows[0].map(h=>h.trim());
-  return rows.slice(1)
+  const out = rows.slice(1)
     .filter(r=>r.some(v=>String(v).trim()!==''))
     .map(r=>{ const o={}; head.forEach((h,i)=>o[h]=(r[i]??'').trim()); return o; });
+  out.cot = head;              // giữ lại tên cột, vì tab chỉ có header sẽ ra mảng rỗng
+  return out;
 }
 
-function url(gid, bust){
-  const t = bust ? '&_nc='+Date.now() : '';
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}${t}`;
-}
-function urlAlt(gid, bust){
-  const t = bust ? '&_nc='+Date.now() : '';
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}${t}`;
-}
+function ngPhu(bust){ return bust ? '&_nc='+Date.now() : ''; }
+const B = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
+
 async function fetchTab(name, gid, bust){
-  for(const u of [url(gid,bust), urlAlt(gid,bust)]){
+  const ds = [];
+  if(gid) ds.push(`${B}/gviz/tq?tqx=out:csv&gid=${gid}${ngPhu(bust)}`);
+  ds.push(`${B}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}${ngPhu(bust)}`);
+  if(gid) ds.push(`${B}/export?format=csv&gid=${gid}${ngPhu(bust)}`);
+
+  for(const u of ds){
     try{
       const r = await fetch(u, {cache:'no-store'});
       if(!r.ok) continue;
       const t = await r.text();
-      if(t.trim().startsWith('<')) continue;   // trang lỗi HTML
-      return parseCSV(t);
-    }catch(e){ /* thử endpoint kế */ }
+      if(t.trim().startsWith('<')) continue;          // trang lỗi HTML
+      if(!t.trim()) continue;
+      const rows = parseCSV(t);
+      const cot = rows.cot || [];
+      if(!cot.length) continue;
+      const buoc = COT_BUOC[name];
+      if(buoc && !buoc.every(c => cot.indexOf(c) > -1)) continue;   // nhầm sang tab khác
+      return rows;               // mảng rỗng vẫn hợp lệ: tab có cột nhưng chưa có dòng nào
+    }catch(e){ /* thử địa chỉ kế */ }
   }
-  S.err.push(name);
+  if(!TAB_TUY_CHON.has(name)) S.err.push(name);
   return [];
 }
+/* Tab chưa chắc tồn tại — không đọc được thì bỏ qua lặng lẽ, không báo lỗi đỏ. */
+const TAB_TUY_CHON = new Set(['GA4_DAILY']);
 
 /* ============================================================================
    2 · ĐỌC SỐ — Sheet đang để ngôn ngữ Việt: "." ngăn nghìn, "," thập phân
@@ -621,6 +636,49 @@ function prep(){
   });
   M.hasPrevRank = !!prevRank;
 
+  /* --- GA4 (tuỳ chọn) --- */
+  M.ga4 = (D.GA4_DAILY||[]).map(r=>({
+    ngay:dOnly(r.ngay), ses:toInt(r.sessions), users:toInt(r.users), org:toInt(r.sessions_organic)
+  })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.ngay)).sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  M.coGA4 = M.ga4.length>0;
+  M.ga4Ky = [];
+  if(M.coGA4){
+    M.ga4Last = M.ga4[M.ga4.length-1].ngay;
+    for(let i=0;i<2;i++){
+      const den=addDays(M.ga4Last,-M.N*i), tu=addDays(den,-(M.N-1));
+      const seg=M.ga4.filter(d=>d.ngay>=tu&&d.ngay<=den);
+      M.ga4Ky.push({
+        tu, den, ngay:seg.length,
+        ses:  seg.reduce((a,b)=>a+(b.ses||0),0),
+        users:seg.reduce((a,b)=>a+(b.users||0),0),
+        org:  seg.reduce((a,b)=>a+(b.org||0),0),
+        /* Click Search Console tính trên ĐÚNG cửa sổ ngày của GA4.
+           Hai nguồn chốt số lệch nhau 1 ngày, lấy nguyên kỳ GSC mà so là sai. */
+        gscClicks: M.daily.filter(d=>d.ngay>=tu&&d.ngay<=den).reduce((a,b)=>a+b.clicks,0)
+      });
+    }
+
+    /* Gộp tháng để đối chiếu mức giảm với Search Console. Bỏ tháng thiếu ngày. */
+    const mm=new Map();
+    M.ga4.forEach(d=>{
+      const k=d.ngay.slice(0,7);
+      if(!mm.has(k)) mm.set(k,{thang:k,ses:0,org:0,ngay:0});
+      const m=mm.get(k); m.ses+=d.ses||0; m.org+=d.org||0; m.ngay++;
+    });
+    M.ga4Thang=[...mm.values()].sort((a,b)=>a.thang.localeCompare(b.thang)).map(m=>{
+      const [y,mo]=m.thang.split('-').map(Number);
+      const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();
+      return {...m, dim, partial:m.ngay<dim};
+    });
+    const du=M.ga4Thang.filter(m=>!m.partial);
+    if(du.length>1){
+      const dinh=du.reduce((a,b)=>(!a||b.org>a.org)?b:a,null);
+      const nay=du[du.length-1];
+      M.ga4Drop = dinh.org ? (nay.org-dinh.org)/dinh.org : null;
+      M.ga4DinhThang=dinh.thang; M.ga4NayThang=nay.thang;
+    }
+  }
+
   /* --- Ahrefs --- */
   M.ahrefs = (D.AHREFS_KPI||[]).map(r=>({
     ngay:dOnly(r.ngay_lay), cauhinh:r.cau_hinh||'',
@@ -854,6 +912,9 @@ function tab0(){
       </div>
     </div></div>`;
 
+  /* --- GA4: chỉ số đối chiếu, chỉ hiện khi tab GA4_DAILY có dữ liệu --- */
+  h += khoiGA4();
+
   /* --- KPI hàng 2: uy tín & AI --- */
   h+=`<div class="sec"><div class="sec-h">
       <span class="eyebrow">Uy tín & AI</span><h3>Số chép tay từ Ahrefs</h3>
@@ -897,6 +958,54 @@ const NHOM_LOI={'404':'URL hỏng', du_lieu_keyword:'Dữ liệu từ khoá', no
   ky_thuat:'Kỹ thuật', cau_truc:'Cấu trúc', toc_do:'Tốc độ'};
 const mucDo   = t => MUC_DO[t]   || String(t||'—').replace(/_/g,' ');
 const nhomLoi = t => NHOM_LOI[t] || String(t||'—').replace(/_/g,' ');
+/* Khối GA4 — cố tình để nhỏ và đặt sau khối traffic chính, để không ai
+   nhầm số phiên GA4 với click Search Console. Không có dữ liệu thì không hiện gì. */
+function khoiGA4(){
+  if(!M.coGA4) return '';
+  const k0=M.ga4Ky[0], k1=M.ga4Ky[1];
+  if(!k0 || !k0.ngay) return '';
+  const du = k1 && k1.ngay===k0.ngay;                 // chỉ so kỳ khi hai kỳ cùng số ngày
+  const dSes=delta(k0.ses,  du?k1.ses:null,  'up');
+  const dOrg=delta(k0.org,  du?k1.org:null,  'up');
+  const dUsr=delta(k0.users,du?k1.users:null,'up');
+  const pctOrg = k0.ses ? k0.org/k0.ses : null;
+  const lech = (k0.gscClicks && k0.org) ? (k0.org-k0.gscClicks)/k0.gscClicks : null;
+
+  const o = (lab,val,phu,d)=>`<div style="padding:2px 18px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.045em">${lab}</div>
+      <div style="font-size:25px;font-weight:800;color:var(--navy);letter-spacing:-.03em" class="num">${val}</div>
+      <div style="font-size:12px;color:var(--faint)">${phu}</div>
+    </div>`;
+
+  return `<div class="sec"><div class="sec-h">
+      <span class="eyebrow">Đối chiếu</span><h3>Google Analytics — số phiên</h3>
+      <span class="src">${dvn(k0.tu)} → ${dvn(k0.den)} · ${freshness('ga4')}</span>
+    </div>
+    <div class="card card-p">
+      <div class="grid g3" style="gap:0">
+        <div style="border-right:1px solid var(--line)">${o('Phiên · mọi nguồn', fi(k0.ses), `${dSes.html} so kỳ trước`)}</div>
+        <div style="border-right:1px solid var(--line)">${o('Phiên từ tìm kiếm tự nhiên', fi(k0.org), `${dOrg.html} · chiếm <b>${fp(pctOrg,0)}</b> tổng phiên`)}</div>
+        <div>${o('Người dùng', fi(k0.users), `${dUsr.html} so kỳ trước`)}</div>
+      </div>
+
+      ${M.ga4Drop!=null ? `<div style="margin-top:14px">${note('info','✓',
+        `<b>Analytics xác nhận mức giảm là thật.</b> Đây là hệ thống đo hoàn toàn độc lập với Search Console —
+         một bên Google đếm ở phía họ, một bên đếm bằng thẻ đo đặt trên web. Hai bên vẫn ra gần như cùng con số:
+         phiên tìm kiếm tự nhiên giảm <b>${nf1.format(Math.abs(M.ga4Drop*100))}%</b> từ ${esc(M.ga4DinhThang)} đến ${esc(M.ga4NayThang)},
+         trong khi click Search Console giảm ${M.dropPct==null?'—':nf1.format(Math.abs(M.dropPct*100))+'%'}.
+         Nói cách khác, đây không phải lỗi đo lường hay lỗi gắn thẻ.`)}</div>` : ''}
+
+      <div class="cap" style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
+        <b>Ba số này không thay thế được click Search Console.</b>
+        Analytics đếm bằng thẻ đo đặt trên web nên tính cả người vào từ Facebook, Zalo, quảng cáo hay gõ thẳng địa chỉ,
+        đồng thời mất số khi người dùng chặn cookie hoặc thoát trước lúc thẻ kịp chạy.
+        Cột giữa đã lọc riêng kênh tìm kiếm tự nhiên nhưng vẫn gộp cả Bing và Cốc Cốc, không riêng Google —
+        và một người bấm vào một lần rồi quay lại sau nửa tiếng sẽ tính thành hai phiên nhưng chỉ một click.
+        ${lech!=null?`Cùng khoảng ${dvn(k0.tu)}–${dvn(k0.den)}: Search Console ghi ${fi(k0.gscClicks)} click, Analytics ghi ${fi(k0.org)} phiên tự nhiên, chênh ${nf1.format(Math.abs(lech*100))}% — mức chênh này bình thường.`:''}
+        ${!du?`<br><b>Chưa so kỳ được:</b> kỳ trước mới có ${k1?k1.ngay:0}/${M.N} ngày dữ liệu.`:''}
+      </div>
+    </div></div>`;
+}
 function statusBadge(t){
   const map={cho_quyet:['bd-md','chờ quyết'], moi:['bd-hi','mới'], dang_xu_ly:['bd-bn','đang xử lý'],
              da_xong:['bd-ok','đã xong'], khong_xu_ly:['bd-lo','không xử lý']};
