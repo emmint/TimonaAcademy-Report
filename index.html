@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>Báo cáo SEO/GEO — Timona Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TIMONA SEO DASHBOARD — bảng màu thương hiệu
+   navy #0F3F76 · xanh sáng #2483C5 · chữ #231F20
+   ============================================================ */
+:root{
+  --navy:#0F3F76; --navy-d:#0A2C53; --navy-l:#1B558F;
+  --blue:#2483C5; --blue-l:#5BA6DC; --blue-xl:#E8F1F9;
+  --ink:#231F20; --muted:#5F6B7A; --faint:#8A94A2;
+  --paper:#F4F6F9; --card:#FFFFFF; --line:#E1E7EF; --line-d:#C9D3E0;
+  --up:#12805C; --up-bg:#E6F4EF;
+  --down:#C0392B; --down-bg:#FBEAE8;
+  --warn:#B7791F; --warn-bg:#FDF4E3;
+  --r:10px; --r-s:6px;
+  --sh:0 1px 2px rgba(16,40,73,.06), 0 4px 14px rgba(16,40,73,.05);
+  --f: 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --fm: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--f); color:var(--ink); background:var(--paper);
+  font-size:14.5px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0; font-weight:700; letter-spacing:-.015em; line-height:1.25}
+a{color:var(--blue); text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:3px}
+.num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+
+/* ---------- TOPBAR ---------- */
+.top{
+  background:var(--navy); color:#fff; position:sticky; top:0; z-index:50;
+  box-shadow:0 1px 0 rgba(255,255,255,.08), 0 6px 20px rgba(10,44,83,.18);
+}
+.top-in{max-width:1500px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:12px; min-width:0}
+.brand img{height:34px; width:auto; display:block}
+.brand-t{min-width:0}
+.brand-t h1{font-size:16px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.brand-t p{margin:1px 0 0; font-size:11.5px; color:#A9C6E4; font-weight:500}
+.top-r{margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.datepill{
+  background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.18);
+  padding:5px 11px; border-radius:99px; font-size:12px; color:#DCE9F6; font-weight:500;
+}
+.datepill b{color:#fff; font-weight:700}
+.btn{
+  font-family:var(--f); font-size:12.5px; font-weight:600; cursor:pointer;
+  border-radius:var(--r-s); padding:7px 13px; border:1px solid transparent; transition:.15s;
+}
+.btn-r{background:var(--blue); color:#fff; border-color:var(--blue-l)}
+.btn-r:hover{background:var(--blue-l)}
+.btn-r:disabled{opacity:.55; cursor:progress}
+.btn-g{background:#fff; color:var(--navy); border-color:var(--line-d)}
+.btn-g:hover{background:var(--blue-xl)}
+
+/* ---------- NAV ---------- */
+.nav{background:var(--navy-d); position:sticky; top:59px; z-index:49}
+.nav-in{max-width:1500px; margin:0 auto; padding:0 20px; display:flex; gap:2px; overflow-x:auto; scrollbar-width:none}
+.nav-in::-webkit-scrollbar{display:none}
+.tab{
+  background:none; border:0; font-family:var(--f); font-size:13px; font-weight:600;
+  color:#9FBEDD; padding:11px 15px; cursor:pointer; white-space:nowrap;
+  border-bottom:3px solid transparent; transition:.15s; display:flex; align-items:center; gap:7px;
+}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{color:#fff; border-bottom-color:var(--blue)}
+.tab .n{
+  font-size:10.5px; font-weight:700; background:rgba(255,255,255,.14);
+  padding:1px 6px; border-radius:99px; color:#CFE2F3;
+}
+.tab[aria-selected="true"] .n{background:var(--blue); color:#fff}
+
+/* ---------- LAYOUT ---------- */
+.wrap{max-width:1500px; margin:0 auto; padding:22px 20px 70px}
+.panel[hidden]{display:none}
+.sec{margin-bottom:26px}
+.sec-h{display:flex; align-items:baseline; gap:12px; margin-bottom:11px; flex-wrap:wrap}
+.sec-h h2{font-size:17px}
+.sec-h h3{font-size:15px}
+.eyebrow{
+  font-size:10.5px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--blue); background:var(--blue-xl); padding:3px 8px; border-radius:4px;
+}
+.sec-h .src{margin-left:auto; font-size:11.5px; color:var(--faint); font-weight:500; display:flex; gap:8px; align-items:center}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh)}
+.card-p{padding:16px 18px}
+.grid{display:grid; gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g21{grid-template-columns:2fr 1fr}
+@media(max-width:1080px){.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2,.g21{grid-template-columns:1fr}}
+@media(max-width:620px){.g4{grid-template-columns:1fr}}
+
+/* ---------- KPI ---------- */
+.kpi{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; box-shadow:var(--sh); position:relative; overflow:hidden}
+.kpi::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--blue)}
+.kpi.k-warn::before{background:var(--warn)} .kpi.k-down::before{background:var(--down)} .kpi.k-up::before{background:var(--up)}
+.kpi .lab{font-size:11.5px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.045em; display:flex; align-items:center; gap:6px}
+.kpi .val{font-size:29px; font-weight:800; letter-spacing:-.03em; margin:5px 0 2px; color:var(--navy); line-height:1.1}
+.kpi .val small{font-size:15px; font-weight:600; color:var(--muted); letter-spacing:0}
+.kpi .sub{font-size:12px; color:var(--faint); font-weight:500}
+.chip{display:inline-flex; align-items:center; gap:3px; font-size:12px; font-weight:700; padding:2px 7px; border-radius:99px; font-variant-numeric:tabular-nums}
+.chip-up{background:var(--up-bg); color:var(--up)}
+.chip-down{background:var(--down-bg); color:var(--down)}
+.chip-flat{background:#EEF1F5; color:var(--muted)}
+
+/* ---------- NOTE / BANNER ---------- */
+.note{border-radius:var(--r-s); padding:11px 14px; font-size:13px; display:flex; gap:10px; align-items:flex-start; line-height:1.5}
+.note b{font-weight:700}
+.note .ic{font-size:15px; line-height:1.35; flex:none}
+.n-warn{background:var(--warn-bg); border:1px solid #F0DCB4; color:#7A5410}
+.n-down{background:var(--down-bg); border:1px solid #F3CFCB; color:#8E2A20}
+.n-info{background:var(--blue-xl); border:1px solid #C6DDF0; color:#134A75}
+.n-mut{background:#F1F4F8; border:1px solid var(--line); color:var(--muted)}
+.mb{margin-bottom:12px}
+
+/* ---------- TABLE ---------- */
+.tw{overflow-x:auto; border-radius:var(--r); border:1px solid var(--line); background:var(--card); box-shadow:var(--sh)}
+table{border-collapse:collapse; width:100%; font-size:13px}
+thead th{
+  background:#F7F9FC; color:var(--muted); font-weight:700; font-size:11px; letter-spacing:.05em;
+  text-transform:uppercase; text-align:left; padding:9px 11px; border-bottom:1.5px solid var(--line-d);
+  white-space:nowrap; position:sticky; top:0;
+}
+th.s{cursor:pointer; user-select:none}
+th.s:hover{color:var(--blue)}
+th.s::after{content:"↕"; opacity:.35; margin-left:4px; font-size:10px}
+th.s.asc::after{content:"↑"; opacity:1; color:var(--blue)}
+th.s.desc::after{content:"↓"; opacity:1; color:var(--blue)}
+tbody td{padding:8px 11px; border-bottom:1px solid #EEF1F6; vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:#FAFCFE}
+.r{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+.c{text-align:center}
+.tt{max-width:420px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.tt2{max-width:520px}
+.mono{font-family:var(--fm); font-size:11.5px}
+.bar-cell{position:relative}
+.bar-cell .bg{position:absolute; right:0; top:3px; bottom:3px; background:var(--blue-xl); border-radius:2px; z-index:0}
+.bar-cell span{position:relative; z-index:1}
+
+/* ---------- BADGE ---------- */
+.bd{display:inline-block; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:4px; white-space:nowrap; letter-spacing:.02em}
+.bd-tm{background:#E7F3EC; color:#12805C}
+.bd-hp{background:#EDE9FB; color:#5B3FBF}
+.bd-bl{background:#F0F2F5; color:#5F6B7A}
+.bd-hi{background:var(--down-bg); color:var(--down)}
+.bd-md{background:var(--warn-bg); color:var(--warn)}
+.bd-lo{background:#EEF1F5; color:var(--muted)}
+.bd-ok{background:var(--up-bg); color:var(--up)}
+.bd-bn{background:var(--blue-xl); color:#134A75}
+
+/* ---------- MISC ---------- */
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); font-weight:500; margin-top:8px}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:2px; margin-right:5px; vertical-align:-1px}
+.cap{font-size:11.5px; color:var(--faint); margin-top:7px; line-height:1.5}
+.ctl{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:11px}
+select,input[type=search]{
+  font-family:var(--f); font-size:12.5px; padding:6px 9px; border:1px solid var(--line-d);
+  border-radius:var(--r-s); background:#fff; color:var(--ink); max-width:100%;
+}
+.seg{display:inline-flex; border:1px solid var(--line-d); border-radius:var(--r-s); overflow:hidden; background:#fff}
+.seg button{
+  font-family:var(--f); font-size:12px; font-weight:600; padding:6px 12px; border:0;
+  background:#fff; color:var(--muted); cursor:pointer; border-right:1px solid var(--line)
+}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--navy); color:#fff}
+.empty{padding:30px 18px; text-align:center; color:var(--faint); font-size:13px}
+.empty>b:first-child{display:block; color:var(--muted); font-size:14px; margin-bottom:5px; font-weight:700}
+.empty>div{max-width:60ch; margin:0 auto; text-align:left}
+.spin{display:inline-block; width:13px; height:13px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chart{width:100%; height:auto; display:block; overflow:visible}
+.chart text{font-family:var(--f)}
+.cwrap{width:100%}
+@media(max-width:760px){
+  .cwrap{overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:4px}
+  .cwrap>.chart{min-width:640px}
+  .cwrap::after{content:"↔ vuốt ngang để xem hết biểu đồ"; display:block; font-size:11px; color:var(--faint); padding-top:4px}
+  .para .cwrap::after{color:#8FAECD}
+}
+
+/* ---------- SIGNATURE: BĂNG NGHỊCH LÝ ---------- */
+.para{
+  background:linear-gradient(160deg,var(--navy) 0%, var(--navy-d) 100%);
+  border-radius:var(--r); padding:20px 22px 16px; color:#fff; box-shadow:0 8px 26px rgba(10,44,83,.22);
+}
+.para-h{display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:14px}
+.para-h .lead{flex:1; min-width:260px}
+.para-h .eyebrow{background:rgba(255,255,255,.13); color:#8FC2E9}
+.para-h h2{color:#fff; font-size:19px; margin-top:8px; letter-spacing:-.02em}
+.para-h p{margin:6px 0 0; font-size:13px; color:#B9D3EA; max-width:62ch; line-height:1.55}
+.para-stat{display:flex; gap:22px; flex-wrap:wrap}
+.para-stat div{min-width:88px}
+.para-stat .v{font-size:23px; font-weight:800; letter-spacing:-.03em; line-height:1.15}
+.para-stat .l{font-size:10.5px; color:#8FAECD; font-weight:600; text-transform:uppercase; letter-spacing:.06em; margin-top:1px}
+.para-stat .v.dn{color:#FF9E93} .para-stat .v.up{color:#7FE3B8}
+.para-box{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:var(--r-s); padding:12px 14px}
+.para-box .chart text{fill:#B9D3EA}
+.para-note{margin-top:11px; font-size:12px; color:#A9C6E4; line-height:1.55; border-top:1px solid rgba(255,255,255,.12); padding-top:10px}
+.para-note b{color:#fff}
+
+/* ---------- FOOTER ---------- */
+.foot{border-top:1px solid var(--line); margin-top:34px; padding:16px 0 0; font-size:11.5px; color:var(--faint); line-height:1.6}
+.foot b{color:var(--muted)}
+
+@media print{
+  .top,.nav,.ctl,.btn{display:none!important}
+  .panel[hidden]{display:block!important}
+  body{background:#fff; font-size:11px}
+  .card,.tw,.kpi{box-shadow:none; break-inside:avoid}
+  .para{background:var(--navy)!important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <img src="https://timona.edu.vn/wp-content/uploads/2025/12/Logo_Timona_web-1.png" alt="Timona Academy" onerror="this.style.display='none'">
+      <div class="brand-t">
+        <h1>Báo cáo SEO/GEO — Timona Academy</h1>
+        <p>Google Search Console · Ahrefs · số nhập tay</p>
+      </div>
+    </div>
+    <div class="top-r">
+      <span class="datepill" id="pill-data">Đang tải dữ liệu…</span>
+      <button class="btn btn-g" onclick="window.print()">In / lưu PDF</button>
+      <button class="btn btn-r" id="btn-refresh" onclick="loadAll(true)">Làm mới</button>
+    </div>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-in" role="tablist" id="tabbar"></div>
+</nav>
+
+<main class="wrap">
+  <div id="boot" class="card card-p" style="text-align:center; padding:50px 20px">
+    <div style="font-size:15px; font-weight:700; color:var(--navy)">Đang đọc Google Sheet…</div>
+    <div id="boot-msg" style="font-size:12.5px; color:var(--muted); margin-top:6px">16 tab dữ liệu</div>
+  </div>
+  <section class="panel" id="p-0" role="tabpanel" hidden></section>
+  <section class="panel" id="p-1" role="tabpanel" hidden></section>
+  <section class="panel" id="p-2" role="tabpanel" hidden></section>
+  <section class="panel" id="p-3" role="tabpanel" hidden></section>
+  <section class="panel" id="p-4" role="tabpanel" hidden></section>
+  <section class="panel" id="p-5" role="tabpanel" hidden></section>
+
+  <div class="foot" id="foot"></div>
+</main>
+
+<script>
+/* ============================================================================
+   0 · CẤU HÌNH
+   ============================================================================ */
+const SHEET_ID = '1mdHGUuDU1Y6SrdFviRHbwPgbBipvix-442awmztPfkc';
+const GID = {
+  CONFIG:'147570048', CLASSIFY_RULES:'1268551812', UPDATE_LOG:'843323452',
+  GSC_DAILY:'309170980', GSC_MONTHLY:'579100357', GSC_SEGMENT:'870497833',
+  GSC_QUERY:'1199678687', GSC_PAGE:'1772340298',
+  KEYWORD_MASTER:'580417143', KEYWORD_RANK_WEEKLY:'165606809',
+  AHREFS_KPI:'1681573242', AI_RESPONSES:'379237336', SITE_ISSUES:'1118437563',
+  AI_RANK_LOG:'1522076847', USP_CHECKLIST:'540045851', USP_CHECK_LOG:'921116997'
+};
+const TABS = [
+  {id:0,n:'0',t:'Tổng quan'},
+  {id:1,n:'1',t:'Traffic'},
+  {id:2,n:'2',t:'Từ khoá'},
+  {id:3,n:'3',t:'Chất lượng traffic'},
+  {id:4,n:'4',t:'AI / GEO'},
+  {id:5,n:'5',t:'Vấn đề & nhật ký'}
+];
+const CO = {navy:'#0F3F76', blue:'#2483C5', blueL:'#5BA6DC', up:'#12805C', down:'#C0392B', warn:'#B7791F', line:'#E1E7EF', muted:'#5F6B7A', faint:'#8A94A2'};
+const D = {};              // dữ liệu thô theo tab
+const S = {tab:0, loadedAt:null, err:[]};   // trạng thái
+
+/* ============================================================================
+   1 · ĐỌC CSV
+   ============================================================================ */
+function parseCSV(txt){
+  const rows=[]; let f='', row=[], q=false;
+  txt = txt.replace(/^\uFEFF/,'');
+  for(let i=0;i<txt.length;i++){
+    const c=txt[i];
+    if(q){
+      if(c==='"'){ if(txt[i+1]==='"'){f+='"';i++;} else q=false; }
+      else f+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(f); f=''; }
+      else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=''; }
+      else if(c==='\r'){ /* bỏ */ }
+      else f+=c;
+    }
+  }
+  if(f!=='' || row.length){ row.push(f); rows.push(row); }
+  if(!rows.length) return [];
+  const head = rows[0].map(h=>h.trim());
+  return rows.slice(1)
+    .filter(r=>r.some(v=>String(v).trim()!==''))
+    .map(r=>{ const o={}; head.forEach((h,i)=>o[h]=(r[i]??'').trim()); return o; });
+}
+
+function url(gid, bust){
+  const t = bust ? '&_nc='+Date.now() : '';
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}${t}`;
+}
+function urlAlt(gid, bust){
+  const t = bust ? '&_nc='+Date.now() : '';
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}${t}`;
+}
+async function fetchTab(name, gid, bust){
+  for(const u of [url(gid,bust), urlAlt(gid,bust)]){
+    try{
+      const r = await fetch(u, {cache:'no-store'});
+      if(!r.ok) continue;
+      const t = await r.text();
+      if(t.trim().startsWith('<')) continue;   // trang lỗi HTML
+      return parseCSV(t);
+    }catch(e){ /* thử endpoint kế */ }
+  }
+  S.err.push(name);
+  return [];
+}
+
+/* ============================================================================
+   2 · ĐỌC SỐ — Sheet đang để ngôn ngữ Việt: "." ngăn nghìn, "," thập phân
+   ============================================================================ */
+function toInt(v){
+  if(v==null) return null;
+  const s=String(v).replace(/[^\d\-]/g,'');
+  if(s===''||s==='-') return null;
+  const n=parseInt(s,10); return isNaN(n)?null:n;
+}
+function toFloat(v){
+  if(v==null) return null;
+  let s=String(v).trim().replace(/%/g,'').replace(/\s/g,'');
+  if(s==='') return null;
+  const lc=s.lastIndexOf(','), ld=s.lastIndexOf('.');
+  if(lc>-1 && ld>-1){ s = lc>ld ? s.replace(/\./g,'').replace(',','.') : s.replace(/,/g,''); }
+  else if(lc>-1){ s = s.replace(/\./g,'').replace(',','.'); }
+  const n=parseFloat(s); return isNaN(n)?null:n;
+}
+function toRate(v){                       // trả về phân số: 0,0148 = 1,48%
+  if(v==null||String(v).trim()==='') return null;
+  const pct=String(v).includes('%');
+  const n=toFloat(v);
+  if(n==null) return null;
+  return pct ? n/100 : n;
+}
+
+/* ---- định dạng hiển thị ---- */
+const nf0=new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('vi-VN',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf2=new Intl.NumberFormat('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fi = n => (n==null||isNaN(n)) ? '—' : nf0.format(n);
+const f1 = n => (n==null||isNaN(n)) ? '—' : nf1.format(n);
+const nfp0=new Intl.NumberFormat('vi-VN',{maximumFractionDigits:0});
+const fp = (n,d=2) => (n==null||isNaN(n)) ? '—' : (d===0?nfp0:d===1?nf1:nf2).format(n*100)+'%';
+const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function dOnly(s){ return String(s||'').slice(0,10); }
+function dvn(s){ const p=dOnly(s).split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : (s||'—'); }
+function dayNum(s){ const t=Date.parse(dOnly(s)+'T00:00:00Z'); return isNaN(t)?null:Math.round(t/86400000); }
+function addDays(s,k){ const d=new Date(Date.parse(dOnly(s)+'T00:00:00Z')+k*86400000); return d.toISOString().slice(0,10); }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+/* so kỳ: hướng tốt = 'up' (càng cao càng tốt) hoặc 'down' (càng thấp càng tốt) */
+function delta(cur, prev, better='up'){
+  if(cur==null||prev==null||prev===0) return {html:'<span class="chip chip-flat">—</span>', dir:0};
+  const p=(cur-prev)/Math.abs(prev);
+  const good = better==='up' ? p>0 : p<0;
+  const flat = Math.abs(p)<0.005;
+  const cls = flat?'chip-flat':(good?'chip-up':'chip-down');
+  const sign = p>0?'+':'';
+  return {
+    html:`<span class="chip ${cls}">${sign}${nf1.format(p*100)}%</span>`,
+    dir: flat?0:(good?1:-1), pct:p
+  };
+}
+</script>
+<script>
+/* ============================================================================
+   3 · BIỂU ĐỒ SVG (không thư viện ngoài)
+   ============================================================================ */
+function scale(dmin,dmax,rmin,rmax){
+  const d=(dmax-dmin)||1;
+  return v => rmin + (v-dmin)/d*(rmax-rmin);
+}
+function niceStep(v){
+  if(!v||v<=0) return 1;
+  const e=Math.pow(10,Math.floor(Math.log10(v))), n=v/e;
+  const m = n<=1?1 : n<=2?2 : n<=2.5?2.5 : n<=5?5 : 10;
+  return m*e;
+}
+/* trả về trần chia hết cho 4 mức lưới, để nhãn trục luôn là số tròn */
+function niceMax(v, ticks){
+  if(!v||v<=0) return 1;
+  const t=ticks||4;
+  return niceStep(v/t)*t;
+}
+/* Biểu đồ kết hợp: cột + tối đa 2 đường, có trục phải, trục phải có thể đảo chiều */
+function comboChart(o){
+  const W=o.w||880, H=o.h||270, ml=o.ml||46, mr=o.mr||46, mt=18, mb=o.mb||34;
+  const iw=W-ml-mr, ih=H-mt-mb, n=o.labels.length;
+  if(!n) return '<div class="empty">Không có dữ liệu</div>';
+  const dark = !!o.dark;
+  const axc = dark?'rgba(255,255,255,.22)':CO.line;
+  const txc = dark?'#B9D3EA':CO.faint;
+  const bw = Math.max(2, Math.min(30, iw/n*0.62));
+  const cx = i => ml + iw*(i+0.5)/n;
+
+  const bmax = niceMax(Math.max(...o.bars.filter(v=>v!=null), 0));
+  const y1 = scale(0,bmax, mt+ih, mt);
+  let rmin=0, rmax=1, y2=null;
+  if(o.line){
+    const vals=o.line.data.filter(v=>v!=null);
+    if(vals.length){
+      rmax = o.line.max!=null?o.line.max:niceMax(Math.max(...vals));
+      rmin = o.line.min!=null?o.line.min:0;
+      y2 = o.line.invert ? scale(rmin,rmax, mt, mt+ih) : scale(rmin,rmax, mt+ih, mt);
+    }
+  }
+  let s=`<div class="cwrap"><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'biểu đồ')}">`;
+  // lưới ngang + trục trái
+  for(let g=0; g<=4; g++){
+    const v=bmax*g/4, y=y1(v);
+    s+=`<line x1="${ml}" y1="${y.toFixed(1)}" x2="${W-mr}" y2="${y.toFixed(1)}" stroke="${axc}" stroke-width="1"${g?' stroke-dasharray="2 4"':''}/>`;
+    s+=`<text x="${ml-7}" y="${(y+3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="${txc}">${fi(Math.round(v))}</text>`;
+  }
+  // trục phải
+  if(y2){
+    for(let g=0; g<=4; g++){
+      const v=rmin+(rmax-rmin)*g/4;
+      s+=`<text x="${W-mr+7}" y="${(y2(v)+3.5).toFixed(1)}" text-anchor="start" font-size="10" fill="${o.line.color||CO.blue}">${o.line.fmt?o.line.fmt(v):f1(v)}</text>`;
+    }
+  }
+  // cột
+  o.bars.forEach((v,i)=>{
+    if(v==null) return;
+    const x=cx(i)-bw/2, y=y1(v), h=Math.max(0, mt+ih-y);
+    const c = (o.barColors&&o.barColors[i]) || o.barColor || CO.blue;
+    const op = (o.barOpacity&&o.barOpacity[i]!=null) ? o.barOpacity[i] : 1;
+    s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${c}" opacity="${op}" rx="2"><title>${esc(o.labels[i])}: ${fi(v)}${o.barUnit||''}</title></rect>`;
+  });
+  // đường
+  if(y2){
+    const pts=[]; o.line.data.forEach((v,i)=>{ if(v!=null) pts.push([cx(i), y2(v)]); });
+    if(pts.length>1){
+      const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+      s+=`<path d="${d}" fill="none" stroke="${o.line.color||CO.warn}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    o.line.data.forEach((v,i)=>{ if(v==null) return;
+      s+=`<circle cx="${cx(i).toFixed(1)}" cy="${y2(v).toFixed(1)}" r="2.6" fill="${o.line.color||CO.warn}"><title>${esc(o.labels[i])}: ${o.line.fmt?o.line.fmt(v):f1(v)}</title></circle>`;
+    });
+  }
+  // nhãn trục X
+  const step = Math.ceil(n/(o.maxLabels||12));
+  const shown=[];
+  o.labels.forEach((l,i)=>{ if(i%step===0) shown.push(i); });
+  const lastI=n-1;
+  if(shown[shown.length-1]!==lastI){
+    if(lastI-shown[shown.length-1] < step) shown.pop();   // tránh 2 nhãn dính nhau
+    shown.push(lastI);
+  }
+  shown.forEach(i=>{
+    s+=`<text x="${cx(i).toFixed(1)}" y="${H-mb+15}" text-anchor="middle" font-size="10" fill="${txc}">${esc(o.labels[i])}</text>`;
+  });
+  s+=`</svg></div>`;
+  return s;
+}
+/* Cột ngang */
+function hbarChart(o){
+  const rowH=o.rowH||27, lw=o.lw||120, W=o.w||620, mr=o.mr||62;
+  const n=o.items.length; if(!n) return '<div class="empty">Không có dữ liệu</div>';
+  const H=n*rowH+8, iw=W-lw-mr;
+  const max=Math.max(...o.items.map(d=>d.v||0),1);
+  let s=`<div class="cwrap"><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'biểu đồ cột ngang')}">`;
+  o.items.forEach((d,i)=>{
+    const y=i*rowH+5, bh=rowH-11, w=Math.max(1.5, (d.v||0)/max*iw);
+    s+=`<text x="${lw-8}" y="${y+bh/2+4}" text-anchor="end" font-size="11.5" font-weight="600" fill="${CO.navy}">${esc(d.k)}</text>`;
+    s+=`<rect x="${lw}" y="${y}" width="${w.toFixed(1)}" height="${bh}" rx="3" fill="${d.c||o.color||CO.blue}"><title>${esc(d.k)}: ${fi(d.v)}</title></rect>`;
+    s+=`<text x="${(lw+w+7).toFixed(1)}" y="${y+bh/2+4}" font-size="11.5" font-weight="700" fill="${CO.muted}">${d.t!=null?esc(d.t):fi(d.v)}</text>`;
+  });
+  return s+'</svg></div>';
+}
+/* Thanh xếp chồng 100% */
+function stackBar(o){
+  const W=o.w||780, H=o.h||34;
+  const tot=o.items.reduce((a,b)=>a+(b.v||0),0);
+  if(!tot) return '<div class="empty">Không có dữ liệu</div>';
+  let x=0, s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.aria||'tỷ trọng')}">`;
+  o.items.forEach(d=>{
+    const w=(d.v||0)/tot*W;
+    s+=`<rect x="${x.toFixed(1)}" y="0" width="${Math.max(0,w).toFixed(1)}" height="${H}" fill="${d.c}"><title>${esc(d.k)}: ${fi(d.v)} (${nf1.format(d.v/tot*100)}%)</title></rect>`;
+    if(w>52) s+=`<text x="${(x+w/2).toFixed(1)}" y="${H/2+4.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">${nf1.format(d.v/tot*100)}%</text>`;
+    x+=w;
+  });
+  return s+'</svg>';
+}
+</script>
+<script>
+/* ============================================================================
+   4 · CHUẨN HOÁ + TÍNH TOÁN
+   ============================================================================ */
+const M = {};   // kết quả tính
+
+function cfg(k){ const r=(D.CONFIG||[]).find(x=>x.key===k); return r? r.value : ''; }
+/* Ô mục tiêu % có thể được gõ là "5", "5%" hoặc "0,05" — quy hết về phân số */
+function pctCfg(k){
+  const raw=cfg(k); if(!String(raw).trim()) return null;
+  let n=toFloat(raw); if(n==null) return null;
+  if(String(raw).includes('%')) n=n/100;
+  else if(n>1) n=n/100;
+  return (n>0 && n<=1) ? n : null;
+}
+
+function prep(){
+  /* --- GSC_DAILY --- */
+  M.daily = (D.GSC_DAILY||[]).map(r=>({
+    ngay:dOnly(r.ngay), clicks:toInt(r.clicks)||0, impr:toInt(r.impressions)||0,
+    ctr:toRate(r.ctr), pos:toFloat(r.position)
+  })).filter(r=>r.ngay && /^\d{4}-\d{2}-\d{2}$/.test(r.ngay))
+     .sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  M.lastDay = M.daily.length ? M.daily[M.daily.length-1].ngay : null;
+  M.firstDay = M.daily.length ? M.daily[0].ngay : null;
+
+  /* --- so kỳ N ngày (mặc định 28 theo CONFIG) --- */
+  const N = toInt(cfg('so_ngay_ky_so_sanh')) || 28;
+  M.N = N;
+  M.periods = [];
+  if(M.lastDay){
+    for(let i=0;i<3;i++){
+      const den = addDays(M.lastDay, -N*i), tu = addDays(den, -(N-1));
+      const seg = M.daily.filter(d=>d.ngay>=tu && d.ngay<=den);
+      const cl=seg.reduce((a,b)=>a+b.clicks,0), im=seg.reduce((a,b)=>a+b.impr,0);
+      const pw=im? seg.reduce((a,b)=>a+(b.pos||0)*b.impr,0)/im : null;
+      M.periods.push({tu,den,clicks:cl,impr:im,ctr:im?cl/im:null,pos:pw,days:seg.length});
+    }
+  }
+
+  /* --- gộp tuần (mốc thứ Hai) --- */
+  const wk=new Map();
+  M.daily.forEach(d=>{
+    const dt=new Date(d.ngay+'T00:00:00Z');
+    const dow=(dt.getUTCDay()+6)%7;               // 0 = thứ Hai
+    const k=addDays(d.ngay,-dow);
+    if(!wk.has(k)) wk.set(k,{tu:k,clicks:0,impr:0,posw:0,days:0});
+    const w=wk.get(k); w.clicks+=d.clicks; w.impr+=d.impr; w.posw+=(d.pos||0)*d.impr; w.days++;
+  });
+  M.weeks=[...wk.values()].sort((a,b)=>a.tu.localeCompare(b.tu)).map(w=>({
+    ...w, den:addDays(w.tu,6), ctr:w.impr?w.clicks/w.impr:null, pos:w.impr?w.posw/w.impr:null, full:w.days===7
+  }));
+
+  /* --- GSC_MONTHLY --- */
+  M.months = (D.GSC_MONTHLY||[]).map(r=>({
+    thang:String(r.thang||'').slice(0,7), clicks:toInt(r.clicks), impr:toInt(r.impressions),
+    ctr:toRate(r.ctr), pos:toFloat(r.position), days:toInt(r.so_ngay_du_lieu), ghi_chu:r.ghi_chu||''
+  })).filter(r=>/^\d{4}-\d{2}$/.test(r.thang)).sort((a,b)=>a.thang.localeCompare(b.thang));
+  // tháng khuyết = số ngày dữ liệu < số ngày thật của tháng
+  M.months.forEach(m=>{
+    const [y,mo]=m.thang.split('-').map(Number);
+    const dim=new Date(Date.UTC(y,mo,0)).getUTCDate();
+    m.dim=dim; m.partial = (m.days!=null && m.days<dim);
+  });
+  const done = M.months.filter(m=>!m.partial);
+  M.peak = done.reduce((a,b)=> (!a||b.clicks>a.clicks)?b:a, null);
+  M.firstFull = done.length? done[0] : null;          // mốc gốc — KHÔNG dùng tháng khuyết
+  M.lastFull  = done.length? done[done.length-1] : null;
+  M.dropPct = (M.peak&&M.lastFull&&M.peak.clicks) ? (M.lastFull.clicks-M.peak.clicks)/M.peak.clicks : null;
+
+  /* --- kỳ của PAGE / QUERY / SEGMENT --- */
+  M.pagePeriods  = groupPeriods(D.GSC_PAGE);
+  M.queryPeriods = groupPeriods(D.GSC_QUERY);
+  M.segPeriods   = groupPeriods(D.GSC_SEGMENT);
+  M.selPage  = pickPeriod(M.pagePeriods);
+  M.selQuery = pickPeriod(M.queryPeriods);
+  M.selSeg   = pickPeriod(M.segPeriods);
+
+  /* --- keyword --- */
+  M.kw = (D.KEYWORD_MASTER||[]).map(r=>({
+    id:r.kw_id, kw:r.tu_khoa, vol:toInt(r.volume)||0, chu_de:r.chu_de||'—',
+    nhom:r.nhom_theo_doi||'—', intent:r.co_intent_hoc_nghe==='TRUE',
+    url:r.url_muc_tieu||'', urlTop:r.url_top_thuc_te||'', dung:r.len_dung_link,
+    ttUrl:r.trang_thai_url||'', hangChuan:toFloat(r.thu_hang_chuan),
+    hangCu:toFloat(r.thu_hang_gan_nhat), mocCu:r.moc_rank_gan_nhat||'',
+    theoDoi:r.dang_theo_doi==='TRUE', ghi:r.ghi_chu||''
+  })).filter(r=>r.id);
+  M.rankPeriods = groupPeriods(D.KEYWORD_RANK_WEEKLY);
+  M.selRank = pickPeriod(M.rankPeriods);
+  const rmap=new Map();
+  (M.selRank?M.selRank.rows:[]).forEach(r=>{
+    rmap.set(r.kw_id,{vi:toFloat(r.vi_tri), clicks:toInt(r.clicks), impr:toInt(r.impressions), url:r.url_xep_hang||''});
+  });
+  // kỳ liền trước (nếu đã có ≥2 tuần)
+  const prevRank = M.rankPeriods.length>1 ? M.rankPeriods[1] : null;
+  const pmap=new Map();
+  if(prevRank) prevRank.rows.forEach(r=>pmap.set(r.kw_id, toFloat(r.vi_tri)));
+  M.kw.forEach(k=>{
+    const r=rmap.get(k.id);
+    k.vi = r? r.vi : null; k.viClicks = r? r.clicks : null; k.viImpr = r? r.impr : null; k.viUrl = r? r.url : '';
+    k.viPrev = prevRank ? (pmap.get(k.id) ?? null) : null;
+  });
+  M.hasPrevRank = !!prevRank;
+
+  /* --- Ahrefs --- */
+  M.ahrefs = (D.AHREFS_KPI||[]).map(r=>({
+    ngay:dOnly(r.ngay_lay), cauhinh:r.cau_hinh||'',
+    dr:toInt(r.dr), ur:toInt(r.ur), bl:toInt(r.backlinks), blAll:toInt(r.backlinks_alltime),
+    rd:toInt(r.ref_domains), rdAll:toInt(r.rd_alltime), okw:toInt(r.organic_keywords),
+    top3:toInt(r.kw_top3), k13:toInt(r.kw_1_3), k410:toInt(r.kw_4_10), k1120:toInt(r.kw_11_20), k2150:toInt(r.kw_21_50),
+    traffic:toInt(r.organic_traffic), value:toInt(r.traffic_value_usd), ghi:r.ghi_chu||''
+  })).filter(r=>r.ngay).sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  M.ahLast = last(M.ahrefs.filter(r=>r.dr!=null)) || last(M.ahrefs);
+
+  /* --- AI responses --- */
+  const ai=(D.AI_RESPONSES||[]).map(r=>({
+    ngay:dOnly(r.ngay_lay), nen:r.nen_tang, res:toInt(r.responses)||0, pages:toInt(r.pages)||0,
+    tt:r.trang_thai_nen_tang||'', ghi:r.ghi_chu||''
+  })).filter(r=>r.nen);
+  const aiLast = ai.length? ai.map(r=>r.ngay).sort().pop() : null;
+  M.ai = ai.filter(r=>r.ngay===aiLast).sort((a,b)=>b.res-a.res);
+  M.aiDate = aiLast;
+  M.aiTotal = M.ai.reduce((a,b)=>a+b.res,0);
+
+  /* --- USP / issue / log --- */
+  M.usp = (D.USP_CHECKLIST||[]).map(r=>({
+    id:r.usp_id, nhom:r.nhom_usp||'', nd:r.noi_dung_usp||'', url:r.url_the_hien_tren_web||'',
+    tren:r.co_tren_web||'', rui:r.rui_ro_phap_ly==='TRUE', canh:r.canh_bao_phap_ly||'',
+    tt:r.trang_thai_noi_dung||'', ghi:r.ghi_chu||''
+  })).filter(r=>r.id);
+  M.issues = (D.SITE_ISSUES||[]).map(r=>({
+    id:r.issue_id, ngay:dOnly(r.ngay_phat_hien), muc:r.muc_do||'', nhom:r.nhom_loi||'',
+    mo:r.mo_ta||'', url:r.url_anh_huong||'', soUrl:toInt(r.so_url), mat:toInt(r.clicks_mat),
+    tt:r.trang_thai||'', ai:r.nguoi_xu_ly||'', ghi:r.ghi_chu||''
+  })).filter(r=>r.id);
+  M.log = (D.UPDATE_LOG||[]).map(r=>{
+    const gn=dOnly(r.cap_nhat_gan_nhat);
+    const dn=(gn && dayNum(gn)!=null) ? (dayNum(today())-dayNum(gn)) : null;
+    const nhip=toInt(r.nhip_ngay);
+    let tt='CHƯA CÓ';
+    if(dn!=null) tt = (nhip && dn>nhip*1.5) ? 'QUÁ HẠN' : (nhip && dn>nhip ? 'SẮP TRỄ' : 'OK');
+    return {khoi:r.khoi, nhip:r.nhip, nhipNgay:nhip, nguon:r.nguon, phut:toInt(r.cong_suc_phut),
+            gn, songay:dn, tt, ai:r.nguoi_cap_nhat||'', ghi:r.ghi_chu||''};
+  }).filter(r=>r.khoi);
+  M.aiRank = D.AI_RANK_LOG||[];
+  M.uspLog = D.USP_CHECK_LOG||[];
+}
+
+function last(a){ return a&&a.length? a[a.length-1] : null; }
+
+function groupPeriods(rows){
+  const m=new Map();
+  (rows||[]).forEach(r=>{
+    const tu=dOnly(r.tu_ngay), den=dOnly(r.den_ngay);
+    if(!tu||!den) return;
+    const k=tu+'|'+den;
+    if(!m.has(k)) m.set(k,{tu,den,rows:[]});
+    m.get(k).rows.push(r);
+  });
+  return [...m.values()].map(p=>{
+    const a=dayNum(p.tu), b=dayNum(p.den);
+    return {...p, days:(a!=null&&b!=null)? b-a+1 : null, n:p.rows.length};
+  }).sort((x,y)=> y.den.localeCompare(x.den) || (x.days||0)-(y.days||0));
+}
+function pickPeriod(ps){
+  if(!ps||!ps.length) return null;
+  const wk=ps.filter(p=>p.days!=null && p.days<=31);
+  return wk.length? wk[0] : ps[0];
+}
+function pLabel(p){
+  if(!p) return '—';
+  const long = p.days==null || p.days>31;
+  return `${dvn(p.tu)} → ${dvn(p.den)}` + (long? ` · toàn kỳ (${p.n} dòng mẫu)` : ` · ${p.days} ngày`);
+}
+function isSample(p){ return p && (p.days==null || p.days>31) && p.n<100; }
+
+/* --- phân loại trang trong 1 kỳ --- */
+function pageSplit(p){
+  const out={thuong_mai:{n:0,c:0}, homepage:{n:0,c:0}, blog:{n:0,c:0}}, tot={n:0,c:0};
+  (p?p.rows:[]).forEach(r=>{
+    const t=(r.loai_trang||'blog').trim(); const c=toInt(r.clicks)||0;
+    if(!out[t]) out[t]={n:0,c:0};
+    out[t].n++; out[t].c+=c; tot.n++; tot.c+=c;
+  });
+  const tm=out.thuong_mai?out.thuong_mai.c:0;
+  return {out, tot, pctTM: tot.c? tm/tot.c : null};
+}
+/* --- phân loại query trong 1 kỳ --- */
+function querySplit(p){
+  let brand={n:0,c:0}, intent={n:0,c:0}, khac={n:0,c:0}, tot={n:0,c:0};
+  (p?p.rows:[]).forEach(r=>{
+    const c=toInt(r.clicks)||0; tot.n++; tot.c+=c;
+    if(r.la_brand==='TRUE'){ brand.n++; brand.c+=c; }
+    else if(r.co_intent_hoc_nghe==='TRUE'){ intent.n++; intent.c+=c; }
+    else { khac.n++; khac.c+=c; }
+  });
+  return {brand,intent,khac,tot};
+}
+</script>
+<script>
+/* ============================================================================
+   5 · MẢNH GIAO DIỆN DÙNG LẠI
+   ============================================================================ */
+const SHEET_URL = gid => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=${gid}`;
+
+function srcLink(tab){
+  return `<a class="src-a" href="${SHEET_URL(GID[tab]||'')}" target="_blank" rel="noopener">${tab} ↗</a>`;
+}
+function bd(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').replace(/Đ/g,'D').toLowerCase(); }
+/* khớp lỏng theo từ khoá, không khớp nguyên văn — đổi chữ trong Sheet vẫn chạy */
+function freshness(key){
+  const k=bd(key);
+  const r=M.log.find(x=>bd(x.khoi).startsWith(k)) || M.log.find(x=>bd(x.khoi).includes(k));
+  if(!r) return '';
+  if(r.songay==null) return `<span class="bd bd-md">chưa cập nhật lần nào</span>`;
+  const cls = r.tt==='OK'?'bd-ok' : r.tt==='SẮP TRỄ'?'bd-md':'bd-hi';
+  const d = r.songay<=0 ? 'hôm nay' : `${r.songay} ngày trước`;
+  return `<span class="bd ${cls}" title="Nhịp ${r.nhip} · nguồn ${r.nguon}">cập nhật ${d}</span>`;
+}
+function kpi(o){
+  return `<div class="kpi ${o.cls||''}">
+    <div class="lab">${esc(o.lab)}${o.tag?` <span class="bd bd-bn">${esc(o.tag)}</span>`:''}</div>
+    <div class="val num">${o.val}${o.unit?`<small> ${esc(o.unit)}</small>`:''}</div>
+    <div class="sub">${o.sub||''}</div>
+  </div>`;
+}
+function note(type, icon, html){ return `<div class="note n-${type}"><span class="ic">${icon}</span><div>${html}</div></div>`; }
+function empty(title, msg){ return `<div class="empty"><b>${esc(title)}</b>${msg||''}</div>`; }
+
+const ANON_NOTE = note('warn','⚠︎',
+  `<b>Đọc số từ khoá phải trừ hao.</b> Google ẩn danh phần lớn truy vấn: kỳ gần nhất trang web nhận
+   <b id="anon-page">—</b> click nhưng bảng từ khoá chỉ giải thích được <b id="anon-query">—</b> click
+   (<b id="anon-pct">—</b> lượt click không biết đến từ từ khoá nào). Mọi phân tích cấp từ khoá bên dưới
+   chỉ nhìn được phần nhỏ bức tranh, không dùng để kết luận tổng thể.`);
+
+function anonFill(){
+  const ps=pageSplit(M.selPage), qs=querySplit(M.selQuery);
+  const hid = ps.tot.c ? (ps.tot.c-qs.tot.c)/ps.tot.c : null;
+  const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+  set('anon-page', fi(ps.tot.c)); set('anon-query', fi(qs.tot.c)); set('anon-pct', hid==null?'—':fp(hid,0));
+}
+
+/* bảng có thể sắp xếp */
+function sortTable(el, col, type){
+  const tb=el.closest('table').tBodies[0];
+  const idx=[...el.parentNode.children].indexOf(el);
+  const cur=el.classList.contains('asc')?'asc':el.classList.contains('desc')?'desc':'';
+  [...el.parentNode.children].forEach(th=>th.classList.remove('asc','desc'));
+  const dir = cur==='desc' ? 'asc' : 'desc';
+  el.classList.add(dir);
+  const rows=[...tb.rows];
+  rows.sort((a,b)=>{
+    let x=a.cells[idx].dataset.v ?? a.cells[idx].textContent;
+    let y=b.cells[idx].dataset.v ?? b.cells[idx].textContent;
+    if(type!=='s'){ x=parseFloat(x); y=parseFloat(y);
+      if(isNaN(x)) x= dir==='desc'?-Infinity:Infinity;
+      if(isNaN(y)) y= dir==='desc'?-Infinity:Infinity;
+      return dir==='desc'? y-x : x-y;
+    }
+    return dir==='desc'? String(y).localeCompare(String(x),'vi') : String(x).localeCompare(String(y),'vi');
+  });
+  rows.forEach(r=>tb.appendChild(r));
+}
+function th(label, type, cls){
+  return `<th class="s ${cls||''}" onclick="sortTable(this,0,'${type||'n'}')">${label}</th>`;
+}
+</script>
+<script>
+/* ============================================================================
+   6 · TAB 0 — TỔNG QUAN
+   ============================================================================ */
+function tab0(){
+  const p0=M.periods[0], p1=M.periods[1];
+  const dCl=delta(p0&&p0.clicks, p1&&p1.clicks,'up');
+  const dCtr=delta(p0&&p0.ctr, p1&&p1.ctr,'up');
+  const dPos=delta(p0&&p0.pos, p1&&p1.pos,'down');
+  const ps=pageSplit(M.selPage);
+  const muc=pctCfg('muc_tieu_pct_click_thuong_mai');
+  const ah=M.ahLast||{};
+
+  let h='';
+
+  /* --- KPI hàng 1 --- */
+  h+=`<div class="sec"><div class="sec-h">
+      <span class="eyebrow">Chỉ số lõi</span>
+      <h2>${M.N} ngày gần nhất</h2>
+      <span class="src">${p0?`${dvn(p0.tu)} → ${dvn(p0.den)}`:''} · ${freshness('gsc')}</span>
+    </div>
+    <div class="grid g4">
+      ${kpi({lab:'Click từ Google', val:fi(p0&&p0.clicks), cls:dCl.dir<0?'k-down':'', sub:`${dCl.html} so với ${M.N} ngày liền trước (${fi(p1&&p1.clicks)})`})}
+      ${kpi({lab:'CTR', val:fp(p0&&p0.ctr), cls:dCtr.dir<0?'k-down':'', sub:`${dCtr.html} · ${fi(p0&&p0.impr)} lượt hiển thị`})}
+      ${kpi({lab:'Vị trí trung bình', val:f1(p0&&p0.pos), cls:dPos.dir<0?'k-warn':'', sub:`${dPos.html} · càng nhỏ càng tốt`})}
+      ${kpi({lab:'Click về trang thương mại', val: ps.pctTM==null?'—':fp(ps.pctTM,1),
+             cls: (ps.pctTM!=null && ps.pctTM<0.05)?'k-down':'',
+             sub: `${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)}/${fi(ps.tot.c)} click · ${mucTieuText(ps.pctTM,muc)}`})}
+    </div></div>`;
+
+  /* --- SIGNATURE: băng nghịch lý --- */
+  const mm=M.months.filter(m=>!m.partial);
+  h+=`<div class="sec"><div class="para">
+      <div class="para-h">
+        <div class="lead">
+          <span class="eyebrow">Điều phải đọc trước tiên</span>
+          <h2>Thứ hạng đi lên, lượt click đi xuống</h2>
+          <p>Website leo từ vị trí trung bình ${f1(M.firstFull&&M.firstFull.pos)} (${esc(M.firstFull?M.firstFull.thang:'—')}) lên ${f1(M.lastFull&&M.lastFull.pos)} (${esc(M.lastFull?M.lastFull.thang:'—')}),
+             nhưng click vẫn rơi. Nguyên nhân không nằm ở thứ hạng: Google trả lời thẳng trên trang kết quả
+             (AI Overviews, đoạn trích) nên người dùng không cần bấm vào nữa.
+             Đây là lý do báo cáo lấy <b>click</b> làm thước đo chính thức, không lấy thứ hạng.</p>
+        </div>
+        <div class="para-stat">
+          <div><div class="v dn num">${M.dropPct==null?'—':nf1.format(M.dropPct*100)+'%'}</div><div class="l">Click, đỉnh → nay</div></div>
+          <div><div class="v up num">${M.firstFull&&M.lastFull? '−'+nf1.format(((M.firstFull.pos-M.lastFull.pos)/M.firstFull.pos)*100)+'%':'—'}</div><div class="l">Vị trí TB (tốt hơn)</div></div>
+          <div><div class="v dn num">${M.firstFull&&M.lastFull? nf2.format(M.firstFull.ctr*100)+'% → '+nf2.format(M.lastFull.ctr*100)+'%':'—'}</div><div class="l">CTR</div></div>
+        </div>
+      </div>
+      <div class="para-box">
+        ${comboChart({
+          labels: M.months.map(m=>m.thang.slice(2).replace('-','/')),
+          bars: M.months.map(m=>m.clicks),
+          barColors: M.months.map(m=> m.partial? 'rgba(91,166,220,.35)' : CO.blueL),
+          barUnit:' click',
+          line:{data:M.months.map(m=>m.pos), color:'#FFC24D', invert:true, min:0, max:20, fmt:v=>nf1.format(v)},
+          dark:true, h:230, maxLabels:17, aria:'Click theo tháng và vị trí trung bình'
+        })}
+        <div class="legend" style="color:#A9C6E4">
+          <span><i style="background:${CO.blueL}"></i>Click / tháng — trục trái</span>
+          <span><i style="background:rgba(91,166,220,.35)"></i>Tháng khuyết ngày</span>
+          <span><i style="background:#FFC24D"></i>Vị trí TB — trục phải, đảo chiều (đường lên = hạng tốt hơn)</span>
+        </div>
+      </div>
+      <div class="para-note">
+        <b>Cách đọc:</b> đường vàng đi lên nghĩa là thứ hạng tốt lên. Cột xanh thấp dần nghĩa là click ít đi.
+        Mọi con số so sánh ở trên lấy mốc gốc là <b>${esc(M.firstFull?M.firstFull.thang:'—')}</b> — tháng đủ ngày đầu tiên.
+        Các tháng nhạt màu (${M.months.filter(m=>m.partial).map(m=>m.thang).join(', ')||'—'}) thiếu ngày nên bị loại khỏi mọi phép so sánh.
+      </div>
+    </div></div>`;
+
+  /* --- KPI hàng 2: uy tín & AI --- */
+  h+=`<div class="sec"><div class="sec-h">
+      <span class="eyebrow">Uy tín & AI</span><h3>Số chép tay từ Ahrefs</h3>
+      <span class="src">${M.ahLast?`lấy ${dvn(M.ahLast.ngay)}`:''} · ${freshness('ahrefs: 6')}</span>
+    </div>
+    <div class="grid g4">
+      ${kpi({lab:'Domain Rating', val:fi(ah.dr), sub:`UR ${fi(ah.ur)} · ${fi(ah.bl)} backlink`})}
+      ${kpi({lab:'Tên miền trỏ về', val:fi(ah.rd), sub:`tổng mọi thời kỳ ${fi(ah.rdAll)}`})}
+      ${kpi({lab:'Từ khoá tự nhiên', val:fi(ah.okw), sub:`trong đó Top 3: <b>${fi(ah.top3)}</b>`})}
+      ${kpi({lab:'AI trích dẫn Timona', val:fi(M.aiTotal), unit:'lượt', sub:`${M.ai.length} nền tảng · ${M.aiDate?dvn(M.aiDate):'—'}`})}
+    </div></div>`;
+
+  /* --- việc cần chú ý --- */
+  const hot=M.issues.filter(i=>i.muc==='cao' && i.tt!=='da_xong' && i.tt!=='khong_xu_ly');
+  const late=M.log.filter(l=>l.tt==='QUÁ HẠN'||l.tt==='CHƯA CÓ');
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Cần xử lý</span><h3>Việc mức cao đang mở</h3>
+      <span class="src">${srcLink('SITE_ISSUES')}</span></div>`;
+  if(!hot.length) h+=`<div class="card">${empty('Không có việc mức cao nào đang mở','')}</div>`;
+  else{
+    h+=`<div class="tw"><table><thead><tr>
+      <th>Mã</th><th>Nhóm</th><th>Nội dung</th><th>Ảnh hưởng</th><th>Trạng thái</th></tr></thead><tbody>`;
+    hot.forEach(i=>{
+      h+=`<tr><td class="mono">${esc(i.id)}</td><td><span class="bd bd-hi">${esc(nhomLoi(i.nhom))}</span></td>
+        <td class="tt2">${esc(i.mo)}</td>
+        <td class="mono tt">${i.url?esc(i.url):'—'}</td>
+        <td>${statusBadge(i.tt)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  if(late.length){
+    h+=`<div style="margin-top:12px">${note('warn','⏱',
+      `<b>Khối dữ liệu chưa được cập nhật:</b> ${late.map(l=>esc(l.khoi)+(l.songay!=null?` (${l.songay} ngày)`:' (chưa có lần nào)')).join(' · ')}.
+       Xem chi tiết ở tab <b>Vấn đề & nhật ký</b>.`)}</div>`;
+  }
+  h+=`</div>`;
+
+  return h;
+}
+const MUC_DO={cao:'Cao', trung_binh:'Trung bình', thap:'Thấp'};
+const NHOM_LOI={'404':'URL hỏng', du_lieu_keyword:'Dữ liệu từ khoá', noi_dung:'Nội dung',
+  ky_thuat:'Kỹ thuật', cau_truc:'Cấu trúc', toc_do:'Tốc độ'};
+const mucDo   = t => MUC_DO[t]   || String(t||'—').replace(/_/g,' ');
+const nhomLoi = t => NHOM_LOI[t] || String(t||'—').replace(/_/g,' ');
+function statusBadge(t){
+  const map={cho_quyet:['bd-md','chờ quyết'], moi:['bd-hi','mới'], dang_xu_ly:['bd-bn','đang xử lý'],
+             da_xong:['bd-ok','đã xong'], khong_xu_ly:['bd-lo','không xử lý']};
+  const m=map[t]||['bd-lo', t||'—'];
+  return `<span class="bd ${m[0]}">${esc(m[1])}</span>`;
+}
+</script>
+<script>
+/* ============================================================================
+   7 · TAB 1 — TRAFFIC
+   ============================================================================ */
+function tab1(){
+  let h='';
+  const [p0,p1,p2]=M.periods;
+
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Ưu tiên 1</span><h2>Traffic từ Google</h2>
+      <span class="src">${M.firstDay?`${dvn(M.firstDay)} → ${dvn(M.lastDay)} · ${fi(M.daily.length)} ngày`:''} · ${srcLink('GSC_DAILY')}</span></div>
+      ${note('info','ℹ︎', `<b>Thước đo chính thức là click của Google Search Console.</b>
+        Không dùng số người dùng GA4, không dùng ước lượng traffic của Ahrefs — ba nguồn này đếm khác nhau,
+        trộn vào một bảng thì mọi so sánh đều sai.`)}</div>`;
+
+  /* --- bảng so kỳ --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>So kỳ ${M.N} ngày</h3></div>
+    <div class="tw"><table><thead><tr>
+      <th>Kỳ</th><th class="r">Click</th><th class="r">So kỳ trước</th><th class="r">Hiển thị</th>
+      <th class="r">CTR</th><th class="r">Vị trí TB</th></tr></thead><tbody>`;
+  M.periods.forEach((p,i)=>{
+    const pv=M.periods[i+1];
+    const d=pv? delta(p.clicks,pv.clicks,'up').html : '<span class="chip chip-flat">—</span>';
+    const nm=['Kỳ gần nhất','Kỳ liền trước','Kỳ trước nữa'][i];
+    h+=`<tr${i?'':' style="background:#F7FBFF"'}>
+      <td><b>${nm}</b><div style="font-size:11.5px;color:var(--faint)">${dvn(p.tu)} → ${dvn(p.den)}</div></td>
+      <td class="r"><b style="font-size:15px">${fi(p.clicks)}</b></td>
+      <td class="r">${d}</td><td class="r">${fi(p.impr)}</td>
+      <td class="r">${fp(p.ctr)}</td><td class="r">${f1(p.pos)}</td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    <div class="cap">Vị trí trung bình tính theo trọng số lượt hiển thị (chuẩn của Search Console), không phải trung bình cộng đơn thuần.</div></div>`;
+
+  /* --- nghịch lý --- */
+  h+=`<div class="sec">${note('down','▲▼',
+    `<b>Nghịch lý cốt lõi — bắt buộc nêu trong mọi báo cáo.</b>
+     Vị trí trung bình cải thiện từ ${f1(M.firstFull&&M.firstFull.pos)} xuống còn ${f1(M.lastFull&&M.lastFull.pos)},
+     nhưng click giảm ${M.dropPct==null?'—':nf1.format(Math.abs(M.dropPct*100))+'%'} và CTR rơi từ
+     ${M.firstFull?fp(M.firstFull.ctr):'—'} xuống ${M.lastFull?fp(M.lastFull.ctr):'—'}.
+     Mốc gốc lấy ${esc(M.firstFull?M.firstFull.thang:'—')} và ${esc(M.peak?M.peak.thang:'—')} (đỉnh click), đều là tháng đủ ngày.
+     Đây là dấu hiệu <b>zero-click</b>: Google và các công cụ AI trả lời thẳng trên trang kết quả,
+     người dùng đọc xong không bấm vào web nữa. Xếp hạng tốt hơn không còn tự động đổi thành lượt truy cập.`)}</div>`;
+
+  /* --- biểu đồ tuần --- */
+  const wk=M.weeks.slice(-26);
+  h+=`<div class="sec"><div class="sec-h"><h3>Click và lượt hiển thị theo tuần</h3>
+      <span class="src">26 tuần gần nhất · mốc tuần: ${esc(cfg('ngay_bat_dau_tuan')||'Thứ 2')}</span></div>
+    <div class="card card-p">
+      ${comboChart({
+        labels: wk.map(w=>dvn(w.tu).slice(0,5)),
+        bars: wk.map(w=>w.clicks),
+        barColors: wk.map(w=> w.full?CO.blue:'#BBD6EC'),
+        barUnit:' click',
+        line:{data:wk.map(w=>w.impr), color:CO.warn, fmt:v=>fi(Math.round(v))},
+        h:270, mr:60, maxLabels:13, aria:'Click và hiển thị theo tuần'
+      })}
+      <div class="legend">
+        <span><i style="background:${CO.blue}"></i>Click (tuần đủ 7 ngày)</span>
+        <span><i style="background:#BBD6EC"></i>Tuần chưa đủ 7 ngày</span>
+        <span><i style="background:${CO.warn}"></i>Lượt hiển thị — trục phải</span>
+      </div>
+    </div></div>`;
+
+  /* --- bảng tháng --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>Theo tháng</h3><span class="src">${srcLink('GSC_MONTHLY')}</span></div>
+    <div class="tw"><table><thead><tr>
+      ${th('Tháng','s')}${th('Click','n','r')}${th('Hiển thị','n','r')}${th('CTR','n','r')}${th('Vị trí TB','n','r')}
+      <th class="r">Ngày có dữ liệu</th><th>Ghi chú</th></tr></thead><tbody>`;
+  [...M.months].reverse().forEach(m=>{
+    h+=`<tr${m.partial?' style="background:#FDFBF4"':''}>
+      <td data-v="${m.thang}"><b>${esc(m.thang)}</b>${m.partial?' <span class="bd bd-md">khuyết</span>':''}</td>
+      <td class="r" data-v="${m.clicks}">${fi(m.clicks)}</td>
+      <td class="r" data-v="${m.impr}">${fi(m.impr)}</td>
+      <td class="r" data-v="${m.ctr}">${fp(m.ctr)}</td>
+      <td class="r" data-v="${m.pos}">${f1(m.pos)}</td>
+      <td class="r">${fi(m.days)}/${m.dim}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc(m.ghi_chu)}</td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    ${M.months.some(m=>m.partial)?`<div style="margin-top:10px">${note('warn','⚠︎',
+      `<b>Tháng khuyết ngày không đem so ngang.</b> ${M.months.filter(m=>m.partial).map(m=>`${esc(m.thang)} chỉ có ${m.days}/${m.dim} ngày`).join(' · ')}.
+       So một tháng thiếu ngày với tháng đủ ngày sẽ ra kết luận sai về xu hướng.`)}</div>`:''}
+  </div>`;
+
+  /* --- thiết bị & quốc gia --- */
+  const seg=M.selSeg;
+  const dev=(seg?seg.rows:[]).filter(r=>r.loai_phan_khuc==='thiet_bi')
+      .map(r=>({k:r.gia_tri, v:toInt(r.clicks)||0, pos:toFloat(r.position), ctr:toRate(r.ctr)}))
+      .sort((a,b)=>b.v-a.v);
+  const ctry=(seg?seg.rows:[]).filter(r=>r.loai_phan_khuc==='quoc_gia')
+      .map(r=>({k:r.gia_tri, v:toInt(r.clicks)||0}))
+      .sort((a,b)=>b.v-a.v).slice(0,8);
+  const devTot=dev.reduce((a,b)=>a+b.v,0);
+  h+=`<div class="sec"><div class="sec-h"><h3>Thiết bị và quốc gia</h3>
+      <span class="src">${pLabel(seg)} · ${srcLink('GSC_SEGMENT')}</span></div>
+    <div class="grid g2">
+      <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Thiết bị</h4>
+        ${dev.length? hbarChart({items:dev.map(d=>({k:devName(d.k), v:d.v, t:`${fi(d.v)} · vt ${f1(d.pos)}`})), lw:86, w:560, mr:120, color:CO.blue}) : empty('Chưa có dữ liệu thiết bị','')}
+        ${devTot?`<div class="cap">Tổng ${fi(devTot)} click. Vị trí trên máy tính thường kém hơn nhiều so với điện thoại — đáng xem lại trải nghiệm bản desktop.</div>`:''}
+      </div>
+      <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Quốc gia (top 8)</h4>
+        ${ctry.length? hbarChart({items:ctry.map(d=>({k:ctryName(d.k), v:d.v})), lw:104, w:560, mr:70, color:CO.navy}) : empty('Chưa có dữ liệu quốc gia','')}
+      </div>
+    </div></div>`;
+  return h;
+}
+function devName(k){ return ({MOBILE:'Điện thoại',DESKTOP:'Máy tính',TABLET:'Máy tính bảng'})[k]||k; }
+const CTRY={vnm:'Việt Nam',usa:'Hoa Kỳ',aus:'Úc',jpn:'Nhật Bản',kor:'Hàn Quốc',can:'Canada',
+  deu:'Đức',fra:'Pháp',gbr:'Anh',cze:'Séc',dnk:'Đan Mạch',hkg:'Hồng Kông',twn:'Đài Loan',
+  sgp:'Singapore',tha:'Thái Lan',khm:'Campuchia',lao:'Lào',mys:'Malaysia',phl:'Philippines',
+  chn:'Trung Quốc',rus:'Nga',pol:'Ba Lan',nld:'Hà Lan',swe:'Thuỵ Điển',nor:'Na Uy',
+  che:'Thuỵ Sĩ',ita:'Ý',esp:'Tây Ban Nha',ind:'Ấn Độ',idn:'Indonesia',nzl:'New Zealand',
+  ukr:'Ukraina',bel:'Bỉ',aut:'Áo',fin:'Phần Lan',isr:'Israel',are:'UAE'};
+function ctryName(c){ const k=String(c||'').toLowerCase(); return CTRY[k] || k.toUpperCase(); }
+</script>
+<script>
+/* ============================================================================
+   8 · TAB 2 — TỪ KHOÁ
+   ============================================================================ */
+function tab2(){
+  let h='';
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Ưu tiên 2</span><h2>Thứ hạng từ khoá</h2>
+      <span class="src">${fi(M.kw.length)} từ khoá · ${srcLink('KEYWORD_MASTER')}</span></div>
+      ${ANON_NOTE}</div>`;
+
+  /* --- tổng hợp theo chủ đề --- */
+  const byTopic=new Map();
+  M.kw.forEach(k=>{
+    if(!byTopic.has(k.chu_de)) byTopic.set(k.chu_de,{chu_de:k.chu_de,n:0,vol:0,nRank:0,top3:0,top10:0,posSum:0,volIntent:0,nhom:{}});
+    const t=byTopic.get(k.chu_de);
+    t.n++; t.vol+=k.vol; if(k.intent) t.volIntent+=k.vol;
+    t.nhom[k.nhom]=(t.nhom[k.nhom]||0)+1;
+    if(k.vi!=null){ t.nRank++; t.posSum+=k.vi; if(k.vi<=3) t.top3++; if(k.vi<=10) t.top10++; }
+  });
+  const topics=[...byTopic.values()].map(t=>({...t, pos: t.nRank? t.posSum/t.nRank : null,
+      nhomChinh: Object.entries(t.nhom).sort((a,b)=>b[1]-a[1])[0][0]}))
+      .sort((a,b)=>b.vol-a.vol);
+
+  h+=`<div class="sec"><div class="sec-h"><h3>Bộ từ khoá theo chủ đề</h3>
+      <span class="src">thứ hạng kỳ ${pLabel(M.selRank)} · ${srcLink('KEYWORD_RANK_WEEKLY')}</span></div>
+    <div class="tw"><table><thead><tr>
+      ${th('Chủ đề','s')}<th>Nhóm</th>${th('Số từ khoá','n','r')}${th('Volume/tháng','n','r')}
+      ${th('% volume có ý định học','n','r')}${th('Có thứ hạng','n','r')}${th('Top 10','n','r')}${th('Vị trí TB','n','r')}
+    </tr></thead><tbody>`;
+  topics.forEach(t=>{
+    const pi=t.vol? t.volIntent/t.vol : null;
+    h+=`<tr>
+      <td data-v="${esc(t.chu_de)}"><b>${esc(t.chu_de)}</b></td>
+      <td>${nhomBadge(t.nhomChinh)}</td>
+      <td class="r" data-v="${t.n}">${fi(t.n)}</td>
+      <td class="r" data-v="${t.vol}"><b>${fi(t.vol)}</b></td>
+      <td class="r" data-v="${pi==null?-1:pi}">${pi==null?'—':`<span class="${pi<0.4?'chip chip-down':'chip chip-up'}">${fp(pi,0)}</span>`}</td>
+      <td class="r" data-v="${t.nRank}">${fi(t.nRank)}<span style="color:var(--faint)">/${fi(t.n)}</span></td>
+      <td class="r" data-v="${t.top10}">${fi(t.top10)}</td>
+      <td class="r" data-v="${t.pos==null?999:t.pos}">${f1(t.pos)}</td></tr>`;
+  });
+  h+=`</tbody></table></div>
+  <div class="cap">Cột “có thứ hạng” đếm số từ khoá thực sự lọt bảng xếp hạng trong kỳ.
+   Ô trống nghĩa là không lọt — không phải hạng 0.</div></div>`;
+
+  /* --- cảnh báo tụt hạng / mốc cũ --- */
+  const nguong = toInt(cfg('nguong_canh_bao_tut_hang')) || 3;
+  if(M.hasPrevRank){
+    const drops=M.kw.filter(k=>k.vi!=null && k.viPrev!=null && (k.vi-k.viPrev)>=nguong)
+      .sort((a,b)=>(b.vi-b.viPrev)-(a.vi-a.viPrev)).slice(0,25);
+    h+=`<div class="sec"><div class="sec-h"><h3>Cảnh báo tụt hạng</h3>
+        <span class="src">tụt từ ${nguong} bậc trở lên so với kỳ trước</span></div>`;
+    h+= drops.length? rankTable(drops,true) : `<div class="card">${empty('Không có từ khoá nào tụt quá ngưỡng','Ngưỡng hiện tại: '+nguong+' bậc (đổi ở tab CONFIG).')}</div>`;
+    h+=`</div>`;
+  }else{
+    h+=`<div class="sec"><div class="sec-h"><h3>Cảnh báo tụt hạng</h3></div>
+      <div class="card">${empty('Chưa đủ hai kỳ để so hạng',
+      `Bảng <b>KEYWORD_RANK_WEEKLY</b> mới có 1 kỳ (${pLabel(M.selRank)}). Sau lần chạy script tuần tới sẽ tự có cột so kỳ.
+       Cột “mốc cũ” trong bảng dưới lấy từ bảng keyword gốc nhưng <b>không ghi năm</b> (lỗi IS-019) nên chỉ để tham khảo.`)}</div></div>`;
+  }
+
+  /* --- bảng từ khoá đang có hạng --- */
+  const ranked=M.kw.filter(k=>k.vi!=null).sort((a,b)=>a.vi-b.vi);
+  h+=`<div class="sec"><div class="sec-h"><h3>Từ khoá đang có thứ hạng</h3>
+      <span class="src">${fi(ranked.length)}/${fi(M.kw.filter(k=>k.theoDoi).length)} từ khoá đang theo dõi lọt bảng xếp hạng</span></div>
+    <div class="ctl">
+      <select id="kw-topic" onchange="filterKw()"><option value="">Mọi chủ đề</option>
+        ${topics.map(t=>`<option value="${esc(t.chu_de)}">${esc(t.chu_de)} (${t.n})</option>`).join('')}</select>
+      <div class="seg">
+        <button aria-pressed="true" onclick="kwGrp(this,'')">Tất cả</button>
+        <button aria-pressed="false" onclick="kwGrp(this,'top10')">Top 10</button>
+        <button aria-pressed="false" onclick="kwGrp(this,'intent')">Có ý định học nghề</button>
+      </div>
+      <input type="search" id="kw-q" placeholder="Tìm từ khoá…" oninput="filterKw()" style="min-width:190px">
+      <span id="kw-count" style="font-size:12px;color:var(--faint)"></span>
+    </div>
+    ${rankTable(ranked,false)}
+  </div>`;
+
+  /* --- top query --- */
+  const qs=(M.selQuery?M.selQuery.rows:[]).map(r=>({
+    q:r.query, c:toInt(r.clicks)||0, i:toInt(r.impressions), ctr:toRate(r.ctr), pos:toFloat(r.position),
+    brand:r.la_brand==='TRUE', intent:r.co_intent_hoc_nghe==='TRUE'
+  })).sort((a,b)=>b.c-a.c).slice(0,20);
+  h+=`<div class="sec"><div class="sec-h"><h3>20 truy vấn mang nhiều click nhất</h3>
+      <span class="src">${pLabel(M.selQuery)} · ${srcLink('GSC_QUERY')}</span></div>`;
+  if(isSample(M.selQuery)) h+=`<div class="mb">${note('mut','ℹ︎',`Kỳ đang chọn chỉ là <b>mẫu ${M.selQuery.n} dòng</b> chép tay từ bản export gốc, không phải bảng đầy đủ.`)}</div>`;
+  h+=`<div class="tw"><table><thead><tr><th>#</th><th>Truy vấn</th><th>Phân loại</th>
+      <th class="r">Click</th><th class="r">Hiển thị</th><th class="r">CTR</th><th class="r">Vị trí</th></tr></thead><tbody>`;
+  qs.forEach((q,i)=>{
+    h+=`<tr><td class="r" style="color:var(--faint)">${i+1}</td>
+      <td class="tt">${esc(q.q)}</td>
+      <td>${q.brand?'<span class="bd bd-bn">thương hiệu</span>':q.intent?'<span class="bd bd-tm">học nghề</span>':'<span class="bd bd-lo">ngoài mục tiêu</span>'}</td>
+      <td class="r"><b>${fi(q.c)}</b></td><td class="r">${fi(q.i)}</td>
+      <td class="r">${fp(q.ctr)}</td><td class="r">${f1(q.pos)}</td></tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+
+  /* --- Ahrefs phân bố hạng --- */
+  const ah=M.ahrefs.filter(r=>r.k13!=null||r.k410!=null);
+  if(ah.length){
+    h+=`<div class="sec"><div class="sec-h"><h3>Đối chiếu phân bố thứ hạng — Ahrefs</h3>
+        <span class="src">${esc(M.ahLast?M.ahLast.cauhinh:'')} · ${srcLink('AHREFS_KPI')}</span></div>
+      <div class="tw"><table><thead><tr><th>Ngày lấy</th>
+        <th class="r">Hạng 1–3</th><th class="r">Hạng 4–10</th><th class="r">Hạng 11–20</th><th class="r">Hạng 21–50</th><th>Ghi chú</th></tr></thead><tbody>`;
+    ah.forEach((r,i)=>{
+      const pv=ah[i-1];
+      const d = pv? delta(r.k13, pv.k13,'up').html : '';
+      h+=`<tr><td><b>${dvn(r.ngay)}</b></td>
+        <td class="r"><b>${fi(r.k13)}</b> ${d}</td><td class="r">${fi(r.k410)}</td>
+        <td class="r">${fi(r.k1120)}</td><td class="r">${fi(r.k2150)}</td>
+        <td style="font-size:12px;color:var(--muted)">${esc(r.ghi)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>
+      <div class="cap">Số Ahrefs là ước lượng của bên thứ ba, dùng để đối chiếu xu hướng — không thay thế số Search Console.
+      Mọi lần lấy phải giữ đúng cấu hình <b>${esc(cfg('ahrefs_cau_hinh'))}</b>, đổi cấu hình là số vênh.</div></div>`;
+  }
+  return h;
+}
+/* Search Console không luôn trả URL xếp hạng -> lùi về URL mục tiêu và ghi rõ đó là dự kiến */
+function urlCell(k){
+  const cut = u => esc(String(u).replace(/^https?:\/\/[^/]+/,''));
+  if(k.viUrl) return cut(k.viUrl);
+  if(k.url)   return `${cut(k.url)} <span class="bd bd-lo" title="Search Console chưa trả URL xếp hạng cho từ khoá này. Đây là URL mục tiêu ghi trong bảng keyword, chưa phải URL đang thật sự lên hạng.">dự kiến</span>`;
+  return '—';
+}
+function nhomBadge(n){
+  const m={chinh:['bd-tm','chính'], phu:['bd-bn','phụ'], brand:['bd-hp','thương hiệu'], khong_muc_tieu:['bd-hi','ngoài mục tiêu']};
+  const x=m[n]||['bd-lo',n||'—'];
+  return `<span class="bd ${x[0]}">${esc(x[1])}</span>`;
+}
+function rankTable(rows, isDrop){
+  let h=`<div class="tw"><table id="${isDrop?'tb-drop':'tb-kw'}"><thead><tr>
+    ${th('Từ khoá','s')}<th>Chủ đề</th>${th('Volume','n','r')}${th('Vị trí','n','r')}
+    ${M.hasPrevRank?th('Kỳ trước','n','r')+'<th class="r">Biến động</th>':'<th class="r">Mốc cũ</th>'}
+    ${th('Click','n','r')}<th>URL</th></tr></thead><tbody>`;
+  rows.forEach(k=>{
+    let cmp='';
+    if(M.hasPrevRank){
+      const dd = (k.vi!=null&&k.viPrev!=null)? k.viPrev-k.vi : null;
+      cmp=`<td class="r" data-v="${k.viPrev==null?999:k.viPrev}">${f1(k.viPrev)}</td>
+           <td class="r">${dd==null?'—':`<span class="chip ${dd>0?'chip-up':dd<0?'chip-down':'chip-flat'}">${dd>0?'+':''}${nf1.format(dd)}</span>`}</td>`;
+    }else{
+      cmp=`<td class="r" data-v="${k.hangCu==null?999:k.hangCu}">${k.hangCu==null?'—':`${f1(k.hangCu)} <span style="color:var(--faint);font-size:11px">(${esc(k.mocCu||'?')})</span>`}</td>`;
+    }
+    h+=`<tr data-topic="${esc(k.chu_de)}" data-intent="${k.intent?1:0}" data-pos="${k.vi==null?999:k.vi}" data-kw="${esc((k.kw||'').toLowerCase())}">
+      <td data-v="${esc(k.kw)}"><b>${esc(k.kw)}</b>${k.ttUrl==='404'?' <span class="bd bd-hi">URL 404</span>':''}</td>
+      <td style="font-size:12px">${esc(k.chu_de)} ${nhomBadge(k.nhom)}</td>
+      <td class="r" data-v="${k.vol}">${fi(k.vol)}</td>
+      <td class="r" data-v="${k.vi==null?999:k.vi}"><b>${f1(k.vi)}</b></td>
+      ${cmp}
+      <td class="r" data-v="${k.viClicks||0}">${fi(k.viClicks)}</td>
+      <td class="mono tt">${urlCell(k)}</td></tr>`;
+  });
+  return h+`</tbody></table></div>`;
+}
+let kwFilterGrp='';
+function kwGrp(btn,g){
+  [...btn.parentNode.children].forEach(b=>b.setAttribute('aria-pressed','false'));
+  btn.setAttribute('aria-pressed','true'); kwFilterGrp=g; filterKw();
+}
+function filterKw(){
+  const tb=document.getElementById('tb-kw'); if(!tb) return;
+  const t=(document.getElementById('kw-topic')||{}).value||'';
+  const q=((document.getElementById('kw-q')||{}).value||'').toLowerCase().trim();
+  let n=0;
+  [...tb.tBodies[0].rows].forEach(r=>{
+    let ok = (!t || r.dataset.topic===t) && (!q || r.dataset.kw.includes(q));
+    if(ok && kwFilterGrp==='top10') ok = parseFloat(r.dataset.pos)<=10;
+    if(ok && kwFilterGrp==='intent') ok = r.dataset.intent==='1';
+    r.style.display = ok?'':'none'; if(ok) n++;
+  });
+  const c=document.getElementById('kw-count'); if(c) c.textContent=`hiện ${n} dòng`;
+}
+</script>
+<script>
+/* ============================================================================
+   9 · TAB 3 — CHẤT LƯỢNG TRAFFIC
+   ============================================================================ */
+function tab3(){
+  const ps=pageSplit(M.selPage), qs=querySplit(M.selQuery);
+  const muc=pctCfg('muc_tieu_pct_click_thuong_mai');
+  let h='';
+
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Câu hỏi của anh Hiếu</span>
+      <h2>Traffic này có ra tiền không?</h2>
+      <span class="src">${pLabel(M.selPage)} · ${srcLink('GSC_PAGE')}</span></div>`;
+  if(isSample(M.selPage)) h+=`<div class="mb">${note('warn','⚠︎',
+    `Kỳ đang chọn chỉ là <b>mẫu ${M.selPage.n} dòng top</b> chép từ bản export gốc — <b>không đủ để tính tỷ lệ %</b>.
+     Hãy chọn một kỳ tuần đầy đủ ở ô bên dưới.`)}</div>`;
+
+  h+=`<div class="ctl"><label style="font-size:12.5px;color:var(--muted);font-weight:600">Kỳ dữ liệu</label>
+     <select id="pg-period" onchange="changePagePeriod(this.value)">
+       ${M.pagePeriods.map((p,i)=>`<option value="${i}" ${p===M.selPage?'selected':''}>${esc(pLabel(p))}</option>`).join('')}
+     </select></div>`;
+
+  /* --- chỉ số 2 --- */
+  h+=`<div class="grid g4" style="margin-bottom:16px">
+    ${kpi({lab:'Click về trang thương mại', val: ps.pctTM==null?'—':fp(ps.pctTM,1),
+           cls:(ps.pctTM!=null&&ps.pctTM<0.05)?'k-down':'',
+           sub: muc!=null? mucTieuText(ps.pctTM,muc) : '<b>chưa có mục tiêu</b> — việc chờ quyết số 4'})}
+    ${kpi({lab:'Click vào bài blog', val: ps.tot.c? fp(ps.out.blog.c/ps.tot.c,1):'—', sub:`${fi(ps.out.blog.c)} click · ${fi(ps.out.blog.n)} trang`})}
+    ${kpi({lab:'Click truy vấn thương hiệu', val: qs.tot.c? fp(qs.brand.c/qs.tot.c,1):'—', sub:`${fi(qs.brand.c)} click · người đã biết Timona`})}
+    ${kpi({lab:'Click truy vấn ngoài mục tiêu', val: qs.tot.c? fp(qs.khac.c/qs.tot.c,1):'—',
+           cls:'k-warn', sub:`${fi(qs.khac.c)} click · không có ý định học nghề`})}
+  </div>`;
+
+  /* --- thanh xếp chồng --- */
+  h+=`<div class="card card-p" style="margin-bottom:16px">
+    <h4 style="font-size:13px;margin-bottom:10px">Click đổ về đâu</h4>
+    ${stackBar({items:[
+      {k:'Trang thương mại', v:ps.out.thuong_mai?ps.out.thuong_mai.c:0, c:CO.up},
+      {k:'Trang chủ', v:ps.out.homepage?ps.out.homepage.c:0, c:CO.navy},
+      {k:'Bài blog', v:ps.out.blog?ps.out.blog.c:0, c:'#B9C6D6'}
+    ], aria:'tỷ trọng click theo loại trang'})}
+    <div class="legend">
+      <span><i style="background:${CO.up}"></i><b>Trang thương mại ${ps.pctTM==null?'—':fp(ps.pctTM,1)}</b> — ${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)} click / ${fi(ps.out.thuong_mai?ps.out.thuong_mai.n:0)} trang (khoá học, học phí, tuyển sinh, liên hệ)</span>
+      <span><i style="background:${CO.navy}"></i>Trang chủ ${ps.tot.c?fp((ps.out.homepage?ps.out.homepage.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.homepage?ps.out.homepage.c:0)} click</span>
+      <span><i style="background:#B9C6D6"></i>Bài blog ${ps.tot.c?fp((ps.out.blog?ps.out.blog.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.blog?ps.out.blog.c:0)} click / ${fi(ps.out.blog?ps.out.blog.n:0)} trang</span>
+    </div>
+    <div class="cap">Luật phân loại nằm ở tab <b>CLASSIFY_RULES</b> (${(D.CLASSIFY_RULES||[]).filter(r=>r.loai_rule==='trang').length} luật cho trang).
+     Sửa luật ở đó là đổi thẳng chỉ số quan trọng nhất của báo cáo này — sửa xong phải chạy lại script.</div>
+  </div>`;
+
+  h+=`${note('down','◆',
+    `<b>Vì sao tỷ lệ này thấp.</b> Chỉ ${fi(M.kw.filter(k=>k.intent).reduce((a,b)=>a+b.vol,0))} trong
+     ${fi(M.kw.reduce((a,b)=>a+b.vol,0))} lượt tìm kiếm/tháng mà bảng từ khoá nhắm tới có ý định học nghề
+     (${fp(M.kw.reduce((a,b)=>a+b.vol,0)? M.kw.filter(k=>k.intent).reduce((a,b)=>a+b.vol,0)/M.kw.reduce((a,b)=>a+b.vol,0):null,0)}).
+     Phần còn lại là truy vấn không dẫn tới ghi danh. Đây là vấn đề <b>chọn mục tiêu từ đầu</b>, không phải vấn đề kỹ thuật SEO.`)}</div>`;
+
+  /* --- top trang --- */
+  const pages=(M.selPage?M.selPage.rows:[]).map(r=>({
+    url:r.url, c:toInt(r.clicks)||0, i:toInt(r.impressions), ctr:toRate(r.ctr), pos:toFloat(r.position), t:r.loai_trang||'blog'
+  })).sort((a,b)=>b.c-a.c);
+  const maxC=pages.length?pages[0].c:1;
+  h+=`<div class="sec"><div class="sec-h"><h3>Trang mang click nhiều nhất</h3>
+      <span class="src">hiển thị 40/${fi(pages.length)} trang</span></div>
+    <div class="ctl"><div class="seg">
+      <button aria-pressed="true" onclick="pgF(this,'')">Tất cả</button>
+      <button aria-pressed="false" onclick="pgF(this,'thuong_mai')">Chỉ trang thương mại</button>
+      <button aria-pressed="false" onclick="pgF(this,'blog')">Chỉ blog</button>
+    </div></div>
+    <div class="tw"><table id="tb-page"><thead><tr><th>#</th><th>Trang</th><th>Loại</th>
+      ${th('Click','n','r')}${th('Hiển thị','n','r')}${th('CTR','n','r')}${th('Vị trí','n','r')}</tr></thead><tbody>`;
+  pages.slice(0,40).forEach((p,i)=>{
+    h+=`<tr data-t="${esc(p.t)}"><td class="r" style="color:var(--faint)">${i+1}</td>
+      <td class="mono tt2">${esc(p.url)}</td><td>${pageBadge(p.t)}</td>
+      <td class="r bar-cell" data-v="${p.c}"><span class="bg" style="width:${(p.c/maxC*100).toFixed(1)}%"></span><span><b>${fi(p.c)}</b></span></td>
+      <td class="r" data-v="${p.i||0}">${fi(p.i)}</td><td class="r" data-v="${p.ctr||0}">${fp(p.ctr)}</td>
+      <td class="r" data-v="${p.pos==null?999:p.pos}">${f1(p.pos)}</td></tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+
+  /* --- truy vấn ngoài mục tiêu --- */
+  const off=(M.selQuery?M.selQuery.rows:[]).filter(r=>r.la_brand!=='TRUE' && r.co_intent_hoc_nghe!=='TRUE')
+      .map(r=>({q:r.query,c:toInt(r.clicks)||0,i:toInt(r.impressions),pos:toFloat(r.position)}))
+      .sort((a,b)=>b.c-a.c).slice(0,20);
+  h+=`<div class="sec"><div class="sec-h"><h3>Truy vấn ngoài mục tiêu mang nhiều click nhất</h3>
+      <span class="src">${fi(qs.khac.n)} truy vấn · ${fi(qs.khac.c)} click</span></div>
+    ${off.length?`<div class="tw"><table><thead><tr><th>Truy vấn</th><th class="r">Click</th><th class="r">Hiển thị</th><th class="r">Vị trí</th></tr></thead><tbody>
+      ${off.map(o=>`<tr><td class="tt">${esc(o.q)}</td><td class="r"><b>${fi(o.c)}</b></td><td class="r">${fi(o.i)}</td><td class="r">${f1(o.pos)}</td></tr>`).join('')}
+      </tbody></table></div>`:`<div class="card">${empty('Không có truy vấn ngoài mục tiêu trong kỳ này','')}</div>`}
+    <div class="cap">“Ngoài mục tiêu” = không chứa dấu hiệu ý định học nghề theo luật ở tab CLASSIFY_RULES và không phải truy vấn thương hiệu.
+     Nhóm này vẫn mang traffic nhưng gần như không đổi thành học viên.</div></div>`;
+
+  /* --- URL 404 --- */
+  const url404=M.kw.filter(k=>k.ttUrl==='404');
+  const iss404=M.issues.filter(i=>i.nhom==='404');
+  h+=`<div class="sec"><div class="sec-h"><h3>URL hỏng đang gắn từ khoá</h3>
+      <span class="src">${srcLink('SITE_ISSUES')}</span></div>
+    <div class="tw"><table><thead><tr><th>URL</th><th>Kết luận</th><th class="r">Từ khoá gắn vào</th><th class="r">Volume</th><th>Trạng thái</th></tr></thead><tbody>`;
+  const grp=new Map();
+  url404.forEach(k=>{
+    const u=(k.url||k.urlTop||'').replace(/^https?:\/\/[^/]+/,'');
+    if(!grp.has(u)) grp.set(u,{u,n:0,vol:0});
+    const g=grp.get(u); g.n++; g.vol+=k.vol;
+  });
+  iss404.forEach(i=>{ const u=i.url; if(u && !grp.has(u)) grp.set(u,{u,n:0,vol:0}); });
+  [...grp.values()].sort((a,b)=>b.vol-a.vol).forEach(g=>{
+    const iss=iss404.find(i=>i.url===g.u);
+    h+=`<tr><td class="mono tt">${esc(g.u)}</td>
+      <td style="font-size:12px">${iss?esc(iss.mo):'<span style="color:var(--faint)">chưa ghi nhận trong SITE_ISSUES</span>'}</td>
+      <td class="r">${fi(g.n)}</td><td class="r">${fi(g.vol)}</td>
+      <td>${iss?statusBadge(iss.tt):'—'}</td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    ${note('warn','⚠︎', `<b>Không kiểm tra được 404 tự động.</b> Website đang bật tường lửa chặn bot (lỗi IS-018):
+      mọi URL gọi từ máy chủ đều trả về mã 200 kèm trang chờ, kể cả URL không tồn tại.
+      Vì vậy ${fi(M.kw.filter(k=>k.ttUrl==='chua_kiem_tra').length)} từ khoá còn để trạng thái “chưa kiểm tra” —
+      phải kiểm bằng Screaming Frog hoặc trình duyệt thật.`)}
+  </div>`;
+  return h;
+}
+function mucTieuText(cur, muc){
+  if(muc==null) return '<b>chưa có mục tiêu</b> — chờ anh Hiếu chốt';
+  if(cur==null) return `mục tiêu ${fp(muc,1)}`;
+  const con = muc-cur;
+  return con<=0 ? `mục tiêu ${fp(muc,1)} · <span class="chip chip-up">đã đạt</span>`
+                : `mục tiêu ${fp(muc,1)} · <span class="chip chip-down">còn thiếu ${fp(con,1)}</span>`;
+}
+function pageBadge(t){
+  return t==='thuong_mai'?'<span class="bd bd-tm">thương mại</span>'
+       : t==='homepage'?'<span class="bd bd-hp">trang chủ</span>'
+       : `<span class="bd bd-bl">${esc(t)}</span>`;
+}
+function pgF(btn,t){
+  [...btn.parentNode.children].forEach(b=>b.setAttribute('aria-pressed','false'));
+  btn.setAttribute('aria-pressed','true');
+  const tb=document.getElementById('tb-page'); if(!tb) return;
+  [...tb.tBodies[0].rows].forEach(r=>{ r.style.display = (!t||r.dataset.t===t)?'':'none'; });
+}
+function changePagePeriod(i){
+  M.selPage=M.pagePeriods[+i];
+  const q=M.queryPeriods.find(p=>p.tu===M.selPage.tu&&p.den===M.selPage.den); if(q) M.selQuery=q;
+  const s=M.segPeriods.find(p=>p.tu===M.selPage.tu&&p.den===M.selPage.den); if(s) M.selSeg=s;
+  const y=window.scrollY; render(true); window.scrollTo({top:y, behavior:'instant'});
+}
+</script>
+<script>
+/* ============================================================================
+   10 · TAB 4 — AI / GEO
+   ============================================================================ */
+function tab4(){
+  let h='';
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Ưu tiên 3</span><h2>Doanh nghiệp hiện ra khi hỏi AI</h2>
+      <span class="src">${M.aiDate?`lấy ${dvn(M.aiDate)}`:''} · ${freshness('ahrefs: ai')}</span></div>
+      ${note('info','ℹ︎', `<b>Chỉ số GEO chính là số lần AI trích dẫn Timona</b>, đo bằng Ahrefs.
+        Bảng chấm tay 22 điểm khác biệt bên dưới chỉ là phần định tính bổ sung, nhịp hàng tháng.
+        Cách chấm cũ (“Deep Test 10 lần” tự chấm) đã bỏ vì không lưu bằng chứng và không có mốc thời gian —
+        từng cho ra kết quả 0% rồi 100% cho cùng một nội dung sai.`)}</div>`;
+
+  /* --- AI responses --- */
+  h+=`<div class="sec"><div class="grid g21">
+    <div class="card card-p">
+      <h4 style="font-size:13px;margin-bottom:12px">Số câu trả lời AI có nhắc Timona</h4>
+      ${M.ai.length? hbarChart({items:M.ai.map(a=>({
+          k:a.nen, v:a.res, c:a.tt==='paused'?'#B9C6D6':CO.blue, t:`${fi(a.res)} lượt · ${fi(a.pages)} trang`
+        })), lw:118, w:660, mr:150}) : empty('Chưa có số AI responses','Nhập tay từ khối “New index” của Ahrefs, ~1 phút/tuần.')}
+      <div class="cap">Nền tảng màu xám đang được Ahrefs tạm dừng theo dõi — số không tăng thêm, chỉ giữ để so kỳ.</div>
+    </div>
+    <div>
+      ${kpi({lab:'Tổng lượt trích dẫn', val:fi(M.aiTotal), sub:`trên ${M.ai.length} nền tảng`})}
+      <div style="height:14px"></div>
+      ${kpi({lab:'Số trang được trích', val:fi(M.ai.reduce((a,b)=>a+b.pages,0)), sub:'một câu trả lời có thể trích nhiều trang'})}
+      <div style="height:14px"></div>
+      ${kpi({lab:'AI Overviews chiếm', val: M.aiTotal? fp((M.ai.find(a=>/overview/i.test(a.nen))||{res:0}).res/M.aiTotal,0):'—',
+             sub:'nền tảng mạnh nhất — ưu tiên tối ưu cho nó'})}
+    </div></div></div>`;
+
+  /* --- USP checklist --- */
+  const chua=M.usp.filter(u=>!u.tren).length;
+  const rui=M.usp.filter(u=>u.rui);
+  const loi=M.usp.filter(u=>u.tt==='loi_du_lieu'||u.tt==='cho_quyet');
+  h+=`<div class="sec"><div class="sec-h"><h3>22 điểm khác biệt — trạng thái hiển thị</h3>
+      <span class="src">${freshness('usp checklist')} · ${srcLink('USP_CHECKLIST')}</span></div>`;
+  if(chua===M.usp.length){
+    h+=`<div class="mb">${note('warn','⚠︎',
+      `<b>Chưa chấm lần nào.</b> Cột “có trên web” của cả ${M.usp.length} điểm đang trống, nên chưa thể nói AI có đọc được điểm nào.
+       Việc chấm ước ~45 phút/tháng, làm ở tab <b>USP_CHECKLIST</b> và ghi bằng chứng vào <b>USP_CHECK_LOG</b>.
+       Trước khi chấm cần chốt xong nội dung điểm 22 và xử lý rủi ro pháp lý bên dưới.`)}</div>`;
+  }
+  if(rui.length){
+    h+=`<div class="mb">${note('down','§',
+      `<b>${rui.length} điểm có rủi ro pháp lý, chưa được xử lý.</b>
+       ${rui.map(u=>`Điểm ${esc(u.id)} (${esc(u.nhom)})`).join(' · ')} — dùng các cụm “duy nhất”, “hàng đầu”, “số 1”.
+       Khoản 11 Điều 8 Luật Quảng cáo 2012 cấm dùng những từ này khi không có tài liệu hợp pháp chứng minh.
+       Đây là việc chờ anh Hiếu quyết, không tự sửa.`)}</div>`;
+  }
+  h+=`<div class="tw"><table><thead><tr><th>#</th><th>Nhóm</th><th>Nội dung</th>
+      <th class="c">Có trên web</th><th class="c">Pháp lý</th><th>Trạng thái nội dung</th></tr></thead><tbody>`;
+  M.usp.forEach(u=>{
+    const tick = u.tren==='TRUE'||u.tren==='1'||/^c(ó|o)$/i.test(u.tren) ? '<span style="color:var(--up);font-size:16px" title="có">✔</span>'
+               : u.tren==='FALSE'||u.tren==='0' ? '<span style="color:var(--down);font-size:16px" title="không">✖</span>'
+               : '<span style="color:var(--faint)" title="chưa chấm">—</span>';
+    h+=`<tr><td class="r"><b>${esc(u.id)}</b></td>
+      <td style="font-size:12px;font-weight:600">${esc(u.nhom)}</td>
+      <td class="tt2" style="font-size:12px" title="${esc(u.nd)}">${esc(u.nd.slice(0,120))}${u.nd.length>120?'…':''}</td>
+      <td class="c">${tick}</td>
+      <td class="c">${u.rui?`<span class="bd bd-hi" title="${esc(u.canh)}">rủi ro</span>`:'<span style="color:var(--faint)">—</span>'}</td>
+      <td>${uspBadge(u.tt)}</td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    <div class="cap">Cột “có trên web” để trống nghĩa là <b>chưa chấm</b>, không phải “không có”. Đừng đọc ô trống thành số 0.</div></div>`;
+
+  /* --- AI rank log --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>Nhật ký hỏi tay các trợ lý AI</h3>
+      <span class="src">${freshness('ai rank')} · ${srcLink('AI_RANK_LOG')}</span></div>`;
+  if(!M.aiRank.length){
+    h+=`<div class="card">${empty('Chưa có lượt kiểm tra nào',
+      `Nhịp đề xuất: hàng tháng, ~90 phút. Mỗi lượt phải ghi <b>câu hỏi</b>, <b>nền tảng</b>, <b>ngày giờ</b> và
+       <b>link ảnh chụp câu trả lời</b> — thiếu bằng chứng thì con số không kiểm chứng được, đúng lỗi của cách đo cũ.`)}</div>`;
+  }else{
+    h+=`<div class="tw"><table><thead><tr><th>Kỳ</th><th>Ngày</th><th>Nền tảng</th><th>Câu hỏi</th>
+      <th class="c">Có nhắc Timona</th><th>URL được trích</th><th>Đối thủ</th></tr></thead><tbody>`;
+    M.aiRank.forEach(r=>{
+      h+=`<tr><td>${esc(r.ky)}</td><td>${dvn(r.ngay_kiem_tra)}</td><td>${esc(r.nen_tang)}</td>
+        <td class="tt">${esc(r.cau_hoi)}</td>
+        <td class="c">${r.timona_xuat_hien==='TRUE'?'<span style="color:var(--up)">✔</span>':'<span style="color:var(--down)">✖</span>'}</td>
+        <td class="mono tt">${esc(r.url_duoc_trich_dan)}</td><td class="tt">${esc(r.doi_thu_xuat_hien)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+function uspBadge(t){
+  const m={da_duyet:['bd-ok','đã duyệt'], cho_quyet:['bd-md','chờ quyết'], loi_du_lieu:['bd-hi','lỗi dữ liệu']};
+  const x=m[t]||['bd-lo',t||'—'];
+  return `<span class="bd ${x[0]}">${esc(x[1])}</span>`;
+}
+</script>
+<script>
+/* ============================================================================
+   11 · TAB 5 — VẤN ĐỀ & NHẬT KÝ
+   ============================================================================ */
+function tab5(){
+  let h='';
+  const open=M.issues.filter(i=>i.tt!=='da_xong'&&i.tt!=='khong_xu_ly');
+  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Theo dõi</span><h2>Vấn đề đang mở</h2>
+      <span class="src">${fi(open.length)}/${fi(M.issues.length)} đang mở · ${srcLink('SITE_ISSUES')}</span></div>
+    <div class="grid g4" style="margin-bottom:14px">
+      ${kpi({lab:'Mức cao', val:fi(M.issues.filter(i=>i.muc==='cao'&&i.tt!=='da_xong'&&i.tt!=='khong_xu_ly').length), cls:'k-down', sub:'đang mở'})}
+      ${kpi({lab:'Mức trung bình', val:fi(M.issues.filter(i=>i.muc==='trung_binh'&&i.tt!=='da_xong'&&i.tt!=='khong_xu_ly').length), cls:'k-warn', sub:'đang mở'})}
+      ${kpi({lab:'Chờ người khác quyết', val:fi(M.issues.filter(i=>i.tt==='cho_quyet').length), sub:'không tự xử được'})}
+      ${kpi({lab:'Đã đóng', val:fi(M.issues.filter(i=>i.tt==='da_xong'||i.tt==='khong_xu_ly').length), cls:'k-up', sub:'gồm cả “không xử lý”'})}
+    </div>
+    <div class="ctl"><div class="seg">
+      <button aria-pressed="true" onclick="isF(this,'open')">Đang mở</button>
+      <button aria-pressed="false" onclick="isF(this,'cao')">Chỉ mức cao</button>
+      <button aria-pressed="false" onclick="isF(this,'')">Tất cả</button>
+    </div></div>
+    <div class="tw"><table id="tb-iss"><thead><tr>${th('Mã','s')}<th>Mức</th><th>Nhóm</th><th>Nội dung</th>
+      <th>URL</th><th>Trạng thái</th><th>Người xử lý</th></tr></thead><tbody>`;
+  M.issues.forEach(i=>{
+    const mb = i.muc==='cao'?'bd-hi':i.muc==='trung_binh'?'bd-md':'bd-lo';
+    const isOpen = i.tt!=='da_xong'&&i.tt!=='khong_xu_ly';
+    h+=`<tr data-muc="${esc(i.muc)}" data-open="${isOpen?1:0}">
+      <td class="mono" data-v="${esc(i.id)}">${esc(i.id)}</td>
+      <td><span class="bd ${mb}">${esc(mucDo(i.muc))}</span></td>
+      <td style="font-size:12px">${esc(nhomLoi(i.nhom))}</td>
+      <td class="tt2" style="font-size:12.5px">${esc(i.mo)}${i.ghi?`<div style="color:var(--faint);font-size:11.5px;margin-top:2px">${esc(i.ghi)}</div>`:''}</td>
+      <td class="mono tt">${i.url?esc(i.url):'—'}</td>
+      <td>${statusBadge(i.tt)}</td><td style="font-size:12px">${esc(i.ai)}</td></tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+
+  /* --- nhịp cập nhật --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>Độ tươi của từng khối dữ liệu</h3>
+      <span class="src">${srcLink('UPDATE_LOG')}</span></div>
+    <div class="tw"><table><thead><tr><th>Khối</th><th>Nhịp</th><th>Nguồn</th>
+      <th class="r">Công sức</th><th>Cập nhật gần nhất</th><th class="r">Đã bao lâu</th><th>Trạng thái</th></tr></thead><tbody>`;
+  M.log.forEach(l=>{
+    const cls = l.tt==='OK'?'bd-ok': l.tt==='SẮP TRỄ'?'bd-md':'bd-hi';
+    h+=`<tr><td><b>${esc(l.khoi)}</b>${l.ghi?`<div style="font-size:11.5px;color:var(--faint)">${esc(l.ghi)}</div>`:''}</td>
+      <td>${esc(l.nhip)}</td><td style="font-size:12px">${esc(l.nguon)}</td>
+      <td class="r">${l.phut!=null?l.phut+' phút':'—'}</td>
+      <td>${l.gn?dvn(l.gn):'<span style="color:var(--faint)">chưa có</span>'}</td>
+      <td class="r">${l.songay==null?'—':(l.songay<=0?'hôm nay':l.songay+' ngày')}</td>
+      <td><span class="bd ${cls}">${esc(l.tt)}</span></td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    <div class="cap">Cột “đã bao lâu” dashboard tự tính từ ngày hôm nay, không dùng cột công thức trong Sheet
+     (cột đó đang trả số âm — nên sửa hoặc bỏ).</div></div>`;
+
+  /* --- nguồn dữ liệu --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>Nguồn dữ liệu</h3></div>
+    <div class="tw"><table><thead><tr><th>Tab</th><th class="r">Số dòng đọc được</th><th>Ghi ai</th><th>Mở</th></tr></thead><tbody>`;
+  const who={CONFIG:'Tay + script',CLASSIFY_RULES:'Tay',UPDATE_LOG:'Tay + script',GSC_DAILY:'Apps Script',
+    GSC_MONTHLY:'Apps Script',GSC_SEGMENT:'Apps Script',GSC_QUERY:'Apps Script',GSC_PAGE:'Apps Script',
+    KEYWORD_MASTER:'Tay',KEYWORD_RANK_WEEKLY:'Apps Script',AHREFS_KPI:'Tay ~2 phút/tuần',
+    AI_RESPONSES:'Tay ~1 phút/tuần',SITE_ISSUES:'Tay ~3 phút/tuần',AI_RANK_LOG:'Tay ~90 phút/tháng',
+    USP_CHECKLIST:'Tay',USP_CHECK_LOG:'Tay ~45 phút/tháng'};
+  Object.keys(GID).forEach(k=>{
+    const n=(D[k]||[]).length;
+    h+=`<tr><td class="mono"><b>${k}</b></td><td class="r">${n?fi(n):'<span style="color:var(--faint)">0 — trống</span>'}</td>
+      <td style="font-size:12px">${who[k]||''}</td>
+      <td><a href="${SHEET_URL(GID[k])}" target="_blank" rel="noopener">mở tab ↗</a></td></tr>`;
+  });
+  h+=`</tbody></table></div>
+    ${S.err.length?`<div style="margin-top:12px">${note('down','✖',`Không đọc được: <b>${S.err.map(esc).join(', ')}</b>. Kiểm tra quyền chia sẻ Sheet đang để “bất kỳ ai có đường liên kết → người xem”.`)}</div>`:''}
+  </div>`;
+
+  /* --- việc chờ quyết --- */
+  h+=`<div class="sec"><div class="sec-h"><h3>Việc chờ người khác quyết</h3></div>
+    <div class="card card-p" style="font-size:13px;line-height:1.75">
+      <ol style="margin:0;padding-left:20px">
+        <li>Nội dung điểm khác biệt số 22 đang trống — <b>chờ sếp</b>.</li>
+        <li>Giữ hay bỏ các cụm “số 1 Việt Nam”, “đối tác duy nhất”, “hàng đầu” — <b>chờ anh Hiếu</b>.</li>
+        <li>URL <span class="mono">/hoc-nghe-gi-hot-nhat-hien-nay/</span> trả 404 — gỡ nhầm hay có chủ đích, <b>Linh xác minh</b>.</li>
+        <li>Mục tiêu % click về trang thương mại (hiện ${(()=>{const s=pageSplit(M.selPage); return s.pctTM==null?'—':fp(s.pctTM,1);})()}) — <b>chờ anh Hiếu chốt số</b>, điền vào CONFIG.</li>
+        <li>Có bổ sung từ khoá nhóm B và cụm mẹ &amp; bé vào bảng không — <b>chờ anh Hiếu</b>.</li>
+      </ol>
+    </div></div>`;
+  return h;
+}
+function isF(btn,f){
+  [...btn.parentNode.children].forEach(b=>b.setAttribute('aria-pressed','false'));
+  btn.setAttribute('aria-pressed','true');
+  const tb=document.getElementById('tb-iss'); if(!tb) return;
+  [...tb.tBodies[0].rows].forEach(r=>{
+    let ok=true;
+    if(f==='open') ok = r.dataset.open==='1';
+    if(f==='cao') ok = r.dataset.muc==='cao';
+    r.style.display=ok?'':'none';
+  });
+}
+</script>
+<script>
+/* ============================================================================
+   12 · ĐIỀU PHỐI
+   ============================================================================ */
+function buildTabs(){
+  document.getElementById('tabbar').innerHTML = TABS.map(t=>
+    `<button class="tab" role="tab" id="t-${t.id}" aria-selected="${t.id===S.tab}"
+       aria-controls="p-${t.id}" onclick="go(${t.id})"><span class="n">${t.n}</span>${t.t}</button>`).join('');
+}
+function go(i, keepScroll){
+  S.tab=i;
+  TABS.forEach(t=>{
+    const b=document.getElementById('t-'+t.id), p=document.getElementById('p-'+t.id);
+    if(b) b.setAttribute('aria-selected', t.id===i);
+    if(p) p.hidden = t.id!==i;
+  });
+  location.hash='tab'+i;
+  if(!keepScroll) window.scrollTo({top:0, behavior:'instant'});
+}
+function initFilters(){
+  // nút "Đang mở" của bảng vấn đề đang ở trạng thái bật -> phải lọc thật
+  const tb=document.getElementById('tb-iss');
+  if(tb) [...tb.tBodies[0].rows].forEach(r=>{ r.style.display = r.dataset.open==='1'?'':'none'; });
+  kwFilterGrp=''; filterKw();
+}
+function render(keepScroll){
+  const fns=[tab0,tab1,tab2,tab3,tab4,tab5];
+  fns.forEach((fn,i)=>{
+    const el=document.getElementById('p-'+i);
+    try{ el.innerHTML=fn(); }
+    catch(e){ el.innerHTML=`<div class="card card-p">${note('down','✖',`Lỗi dựng tab ${i}: ${esc(e.message)}`)}</div>`; console.error(e); }
+  });
+  anonFill();
+  initFilters();
+  document.getElementById('foot').innerHTML =
+    `<b>Nguồn:</b> Google Sheet <span class="mono">${SHEET_ID.slice(0,12)}…</span> ·
+     <a href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit" target="_blank" rel="noopener">mở bảng gốc ↗</a> ·
+     dữ liệu Search Console đến ${M.lastDay?dvn(M.lastDay):'—'} ·
+     dashboard đọc lúc ${S.loadedAt||'—'}.<br>
+     <b>Cách đọc:</b> click của Search Console là thước đo chính thức. Thứ hạng, ước lượng traffic Ahrefs và số nhập tay chỉ để đối chiếu.
+     Ô trống nghĩa là không có dữ liệu, không phải số 0.`;
+  go(S.tab, keepScroll);
+}
+async function loadAll(bust){
+  const btn=document.getElementById('btn-refresh');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spin"></span> Đang tải'; }
+  S.err=[];
+  const names=Object.keys(GID);
+  let done=0;
+  const msg=document.getElementById('boot-msg');
+  await Promise.all(names.map(async n=>{
+    D[n]=await fetchTab(n, GID[n], bust);
+    done++;
+    if(msg) msg.textContent=`${done}/${names.length} tab`;
+  }));
+  prep();
+  S.loadedAt=new Date().toLocaleString('vi-VN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit',year:'numeric'});
+  const boot=document.getElementById('boot'); if(boot) boot.style.display='none';
+  const pill=document.getElementById('pill-data');
+  if(S.err.length){
+    const b=document.getElementById('boot');
+    if(b){ b.style.display='block'; b.innerHTML=`<div class="note n-down"><span class="ic">✖</span><div><b>Không đọc được ${S.err.length} tab:</b> ${S.err.map(esc).join(', ')}.<br>Kiểm tra Google Sheet đang chia sẻ ở mức “bất kỳ ai có đường liên kết → người xem”, rồi bấm Làm mới.</div></div>`; }
+  }
+  if(pill) pill.innerHTML = M.lastDay
+    ? `Số liệu đến <b>${dvn(M.lastDay)}</b> · đọc lúc ${S.loadedAt}`
+    : `<b>Không đọc được dữ liệu</b>`;
+  render();
+  if(btn){ btn.disabled=false; btn.textContent='Làm mới'; }
+}
+buildTabs();
+const hm=/tab(\d)/.exec(location.hash); if(hm) S.tab=+hm[1];
+loadAll(false);
+</script>
+</body>
+</html>
