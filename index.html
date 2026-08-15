@@ -541,6 +541,63 @@ function stackBar(o){
   });
   return s+'</svg>';
 }
+
+/* Năm bậc thứ hạng, đậm dần theo độ tốt. Dùng chung cho biểu đồ và bảng. */
+const BAC_RANK = [
+  {k:'k13',   ten:'1–3',    c:'#0F3F76'},
+  {k:'k410',  ten:'4–10',   c:'#2483C5'},
+  {k:'k1120', ten:'11–20',  c:'#5BA6DC'},
+  {k:'k2150', ten:'21–50',  c:'#9CC8E8'},
+  {k:'k51100',ten:'51–100', c:'#D3E5F3'}
+];
+/* Cột xếp chồng theo GIÁ TRỊ TUYỆT ĐỐI, không phải 100%.
+   Cố ý không quy về phần trăm: tổng số từ khoá đang rank thay đổi giữa các mốc,
+   và chính sự thay đổi đó là thứ cần nhìn thấy. Quy về 100% sẽ giấu mất nó.
+   Mốc nào khuyết bậc thì chỉ vẽ phần có số và đánh dấu, không suy ra số thiếu. */
+function cotBacAhrefs(moc){
+  if(!moc.length) return '<div class="empty">Chưa có mốc nào có phân bố bậc</div>';
+  const W=760, H=250, ml=44, mr=12, mt=14, mb=46;
+  const iw=W-ml-mr, ih=H-mt-mb;
+  const tong = m => BAC_RANK.reduce((a,b)=>a+(m[b.k]||0),0);
+  const max = Math.max(...moc.map(tong), 1);
+  const bw = Math.min(88, iw/moc.length*0.62);
+  const cx = i => ml + iw*(i+0.5)/moc.length;
+  let s=`<div class="cwrap"><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="phân bố bậc thứ hạng theo mốc">`;
+  /* lưới ngang */
+  for(let g=0; g<=4; g++){
+    const v=max*g/4, y=mt+ih-ih*g/4;
+    s+=`<line x1="${ml}" y1="${y.toFixed(1)}" x2="${W-mr}" y2="${y.toFixed(1)}" stroke="${CO.line}" stroke-width="1"/>`;
+    s+=`<text x="${ml-7}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="10" fill="${CO.faint}">${fi(Math.round(v))}</text>`;
+  }
+  moc.forEach((m,i)=>{
+    const x=cx(i)-bw/2; let y=mt+ih; const t=tong(m);
+    /* Cột khuyết bậc vẽ mờ đi: người xem liếc qua là biết ngay cột này chưa so
+       ngang được với cột khác, không cần đọc chú thích mới hiểu. */
+    const mo = m.thieu.length ? ' opacity="0.42"' : '';
+    BAC_RANK.forEach(b=>{
+      const v=m[b.k]||0; if(!v) return;
+      const hh=v/max*ih; y-=hh;
+      s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" fill="${b.c}"${mo}>
+          <title>${esc(dvn(m.ngay))} · hạng ${b.ten}: ${fi(v)} từ khoá${m.thieu.length?` (mốc này còn khuyết bậc ${m.thieu.join(', ')})`:''}</title></rect>`;
+      if(hh>15) s+=`<text x="${cx(i).toFixed(1)}" y="${(y+hh/2+4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="${b.k==='k13'||b.k==='k410'?'#fff':CO.navy}"${mo}>${fi(v)}</text>`;
+    });
+    if(m.thieu.length){
+      /* khung nét đứt bao phần đã có, kèm dấu ? phía trên: phần còn thiếu không bịa ra chiều cao */
+      s+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${(mt+ih-y).toFixed(1)}"
+           fill="none" stroke="${CO.warn}" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+      s+=`<text x="${cx(i).toFixed(1)}" y="${(y-19).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${CO.warn}">?</text>`;
+    }
+    s+=`<text x="${cx(i).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${m.thieu.length?CO.faint:CO.navy}">${fi(t)}${m.thieu.length?'*':''}</text>`;
+    s+=`<text x="${cx(i).toFixed(1)}" y="${H-mb+17}" text-anchor="middle" font-size="10.5" fill="${CO.muted}">${esc(dvn(m.ngay))}</text>`;
+    if(m.thieu.length) s+=`<text x="${cx(i).toFixed(1)}" y="${H-mb+31}" text-anchor="middle" font-size="9.5" fill="${CO.warn}">thiếu ${m.thieu.length} bậc</text>`;
+  });
+  s+=`</svg></div><div style="display:flex;flex-wrap:wrap;gap:12px;padding:4px 0 2px">`;
+  BAC_RANK.forEach(b=>{
+    s+=`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5;color:var(--muted)">
+        <span style="width:11px;height:11px;border-radius:2px;background:${b.c};display:inline-block"></span>hạng ${b.ten}</span>`;
+  });
+  return s+`</div>`;
+}
 </script>
 <script>
 /* ============================================================================
@@ -713,7 +770,14 @@ function prep(){
     ngay:dOnly(r.ngay_lay), cauhinh:r.cau_hinh||'',
     dr:toInt(r.dr), ur:toInt(r.ur), bl:toInt(r.backlinks), blAll:toInt(r.backlinks_alltime),
     rd:toInt(r.ref_domains), rdAll:toInt(r.rd_alltime), okw:toInt(r.organic_keywords),
-    top3:toInt(r.kw_top3), k13:toInt(r.kw_1_3), k410:toInt(r.kw_4_10), k1120:toInt(r.kw_11_20), k2150:toInt(r.kw_21_50),
+    /* kw_top3 và kw_1_3 là CÙNG một chỉ số, chỉ khác tên cột do lịch sử nhập tay.
+       Mốc nào chỉ điền một trong hai thì vẫn phải đọc ra được, nếu không cả mốc đó
+       biến mất khỏi biểu đồ tiến trình. */
+    top3:toInt(r.kw_top3),
+    k13: toInt(r.kw_1_3)!=null ? toInt(r.kw_1_3) : toInt(r.kw_top3),
+    k13Goc: toInt(r.kw_1_3),
+    k410:toInt(r.kw_4_10), k1120:toInt(r.kw_11_20), k2150:toInt(r.kw_21_50),
+    k51100:toInt(r.kw_51_100),
     traffic:toInt(r.organic_traffic), value:toInt(r.traffic_value_usd), ghi:r.ghi_chu||''
   })).filter(r=>r.ngay).sort((a,b)=>a.ngay.localeCompare(b.ngay));
   M.ahLast = last(M.ahrefs.filter(r=>r.dr!=null)) || last(M.ahrefs);
@@ -766,17 +830,19 @@ function groupPeriods(rows){
   return [...m.values()].map(p=>{
     const a=dayNum(p.tu), b=dayNum(p.den);
     return {...p, days:(a!=null&&b!=null)? b-a+1 : null, n:p.rows.length};
-  }).sort((x,y)=> y.den.localeCompare(x.den) || (x.days||0)-(y.days||0));
+  }).sort((x,y)=> y.den.localeCompare(x.den) || (y.days||0)-(x.days||0));
 }
 function pickPeriod(ps){
   if(!ps||!ps.length) return null;
-  const wk=ps.filter(p=>p.days!=null && p.days<=31);
-  return wk.length? wk[0] : ps[0];
+  /* Sửa 15/08/2026: bỏ ưu tiên kỳ ≤31 ngày.
+     Script GSC đã chuyển sang kỳ 90 ngày (độ phủ 403 từ khoá thay vì 123).
+     Luật cũ ưu tiên kỳ ngắn nên khi hai lô cùng nằm trong bảng, dashboard
+     bám lô 7 ngày và bỏ qua lô dài — hiện thiếu 2/3 số từ khoá. */
+  return ps[0];
 }
 function pLabel(p){
   if(!p) return '—';
-  const long = p.days==null || p.days>31;
-  return `${dvn(p.tu)} → ${dvn(p.den)}` + (long? ` · toàn kỳ (${p.n} dòng mẫu)` : ` · ${p.days} ngày`);
+  return `${dvn(p.tu)} → ${dvn(p.den)}` + (p.days==null? ` · toàn kỳ (${p.n} dòng mẫu)` : ` · ${p.days} ngày`);
 }
 function isSample(p){ return p && (p.days==null || p.days>31) && p.n<100; }
 
@@ -1276,7 +1342,62 @@ function tab2(){
   let h='';
   h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Ưu tiên 2</span><h2>Thứ hạng từ khoá</h2>
       <span class="src">${fi(M.kw.length)} từ khoá · ${srcLink('KEYWORD_MASTER')}</span></div>
-      ${ANON_NOTE}</div>`;
+      ${ANON_NOTE}`;
+
+  /* --- Cảnh báo 1: vị trí Search Console KHÔNG phải thứ hạng tại thời điểm --- */
+  {
+    const theoDoi = M.kw.filter(k=>k.theoDoi).length || M.kw.length;
+    const coHang  = M.kw.filter(k=>k.vi!=null).length;
+    const phu = theoDoi ? coHang/theoDoi : null;
+    h+=`<div class="mb">${note('warn','⚠︎',
+      `<b>Cột “vị trí” bên dưới là vị trí trung bình của Search Console, không phải thứ hạng tại một thời điểm.</b>
+       Google tính nó bằng cách lấy trung bình có trọng số theo lượt hiển thị, gộp mọi thiết bị và khu vực,
+       trong suốt kỳ ${esc(pLabel(M.selRank))}. Vì vậy mới có những giá trị lẻ như 35,9 hay 42,3 —
+       không có vị trí thứ 35,9 nào trên trang kết quả cả.
+       <br><br><b>Độ phủ chỉ ${phu==null?'—':fp(phu,1)}</b> — ${fi(coHang)} trên ${fi(theoDoi)} từ khoá đang theo dõi có số.
+       ${fi(theoDoi-coHang)} từ khoá còn lại <b>không phải hạng kém</b>, mà là Search Console không có dữ liệu:
+       nó chỉ báo cáo khi từ khoá thực sự có lượt hiển thị.`)}</div>`;
+  }
+
+  /* --- Cảnh báo 2: site này là site mobile, thứ hạng hai thiết bị lệch rất xa --- */
+  {
+    const segDai = (M.segPeriods||[]).slice().sort((a,b)=>
+      (dayNum(b.den)-dayNum(b.tu))-(dayNum(a.den)-dayNum(a.tu)))[0];
+    const dv=(segDai?segDai.rows:[]).filter(r=>r.loai_phan_khuc==='thiet_bi')
+      .map(r=>({k:String(r.gia_tri||'').toUpperCase(), c:toInt(r.clicks)||0, pos:toFloat(r.position)}));
+    const tot=dv.reduce((a,b)=>a+b.c,0);
+    const mb=dv.find(r=>r.k==='MOBILE'), dk=dv.find(r=>r.k==='DESKTOP');
+    if(tot && mb && dk && mb.pos!=null && dk.pos!=null){
+      h+=`<div class="mb">${note('info','◆',
+        `<b>Đây là website của người dùng điện thoại — và thứ hạng trên hai thiết bị lệch rất xa nhau.</b>
+         Trong kỳ ${esc(pLabel(segDai))}: điện thoại <b>${fi(mb.c)}</b> click (${fp(mb.c/tot,0)}) với vị trí TB <b>${f1(mb.pos)}</b>,
+         máy tính <b>${fi(dk.c)}</b> click (${fp(dk.c/tot,0)}) với vị trí TB <b>${f1(dk.pos)}</b> —
+         chênh <b>${f1(Math.abs(dk.pos-mb.pos))} bậc</b>.
+         <br><br>Hệ quả khi đọc số từ công cụ theo dõi thứ hạng bên ngoài: các công cụ này thường quét mặc định bằng
+         <b>máy tính</b>, nên con số chúng trả về sẽ kém hơn thứ hạng mà phần lớn người tìm Timona thực sự nhìn thấy.
+         Dùng chúng để đo <b>chiều biến động</b> giữa các mốc, đừng lấy làm con số tuyệt đối khi báo cáo.
+         <br><br><i>Lưu ý cách đọc:</i> chênh lệch này không hoàn toàn nghĩa là cùng một từ khoá thì máy tính xếp thấp hơn —
+         cơ cấu truy vấn trên hai thiết bị vốn khác nhau. Nhưng kết luận thực tiễn không đổi.`)}</div>`;
+    }
+  }
+
+  /* --- Cảnh báo 3: cột mốc cũ trong KEYWORD_MASTER trộn nhiều thời điểm --- */
+  {
+    const dem=new Map();
+    M.kw.forEach(k=>{ if(k.hangCu!=null){ const m=(k.mocCu||'(không ghi mốc)').trim()||'(không ghi mốc)';
+      dem.set(m,(dem.get(m)||0)+1); } });
+    if(dem.size>1){
+      const ds=[...dem.entries()].sort((a,b)=>b[1]-a[1]);
+      h+=`<div class="mb">${note('warn','⚠︎',
+        `<b>Cột “mốc cũ” trong bảng keyword gốc đang trộn ${fi(dem.size)} thời điểm khác nhau.</b>
+         ${ds.map(([m,n])=>`<b>${esc(m)}</b>: ${fi(n)} từ khoá`).join(' · ')}.
+         Các mốc này cách nhau nhiều tháng nhưng nằm chung một cột, nên <b>không so ngang được</b> —
+         một từ khoá “tụt 5 bậc” có thể chỉ là đang so số của tháng 4 với số của tháng 7.
+         Đừng dùng cột này để kết luận tăng giảm; nó chỉ để tham khảo cho tới khi có bảng theo dõi thứ hạng
+         ghi rõ thời điểm từng lần quét.`)}</div>`;
+    }
+  }
+  h+=`</div>`;
 
   /* --- CÂU 6: hai nguồn đếm Top 10 lệch nhau, phải nói rõ phạm vi --- */
   {
@@ -1310,6 +1431,112 @@ function tab2(){
         Ahrefs quét toàn site nên gộp cả từ khoá đến tình cờ.
         Khi báo cáo, <b>lấy số Search Console làm chính</b> và để số Ahrefs bên cạnh như tham chiếu xu hướng.`)}
     </div>`;
+  }
+
+  /* --- Cách đọc số của kỳ dài + độ phủ (thêm 15/08/2026, mục D5) --- */
+  {
+    const nTheoDoi = M.kw.filter(k=>k.theoDoi).length;
+    const dsR = M.kw.filter(k=>k.vi!=null);
+    const pct = nTheoDoi ? dsR.length/nTheoDoi : null;
+    const volTD = M.kw.filter(k=>k.theoDoi).reduce((a,b)=>a+(b.vol||0),0);
+    const volR  = dsR.reduce((a,b)=>a+(b.vol||0),0);
+    const soNgay = M.selRank ? M.selRank.days : null;
+    const bins=[['1 – 3',0,3],['4 – 10',3,10],['11 – 20',10,20],['21 – 50',20,50],['51 – 100',50,100],['Trên 100',100,1e9]];
+    h+=`<div class="sec"><div class="sec-h"><h3>Độ phủ và phân bố thứ hạng</h3>
+        <span class="src">kỳ ${esc(pLabel(M.selRank))} · ${srcLink('KEYWORD_RANK_WEEKLY')}</span></div>
+      <div class="kpis">
+        <div class="kpi"><div class="kpi-l">Từ khoá có thứ hạng</div>
+          <div class="kpi-v">${fi(dsR.length)}<span style="font-size:14px;color:var(--faint)">/${fi(nTheoDoi)}</span></div>
+          <div class="kpi-s">${pct==null?'—':fp(pct,1)} bộ từ khoá đang theo dõi</div></div>
+        <div class="kpi"><div class="kpi-l">Volume phủ được</div>
+          <div class="kpi-v">${fi(volR)}</div>
+          <div class="kpi-s">${volTD?fp(volR/volTD,1):'—'} trên ${fi(volTD)} lượt tìm/tháng của bộ theo dõi</div></div>
+        <div class="kpi"><div class="kpi-l">Độ dài kỳ đo</div>
+          <div class="kpi-v">${soNgay==null?'—':fi(soNgay)}<span style="font-size:14px;color:var(--faint)"> ngày</span></div>
+          <div class="kpi-s">đổi ở ô <span class="mono">gsc_rank_ky_ngay</span> trong CONFIG</div></div>
+      </div>
+      <div class="tw"><table><thead><tr><th>Nhóm thứ hạng</th><th class="r">Số từ khoá</th><th class="r">Volume/tháng</th></tr></thead><tbody>`;
+    bins.forEach(([nhan,a,b])=>{
+      const g=dsR.filter(k=>k.vi>a && k.vi<=b);
+      h+=`<tr><td><b>${nhan}</b></td><td class="r">${fi(g.length)}</td>
+        <td class="r">${fi(g.reduce((x,y)=>x+(y.vol||0),0))}</td></tr>`;
+    });
+    h+=`</tbody></table></div>
+      ${note('warn','◆',`<b>Số này không phải thứ hạng tại một thời điểm.</b>
+        Search Console trả về <b>trung bình có trọng số theo lượt hiển thị trong cả kỳ ${soNgay==null?'':soNgay+' ngày'}</b>,
+        gộp mọi thiết bị và khu vực. Vì thế mới có những giá trị như 35,9 — không có vị trí thứ 35,9 trên trang kết quả.
+        Muốn biết thứ hạng nguyên tại một thời điểm thì phải quét SERP, ghi vào bảng
+        <span class="mono">KEYWORD_RANK_SERP</span>.<br>
+        Kỳ càng dài thì càng nhiều từ khoá có số, nhưng số càng trễ so với hôm nay. Đây là đánh đổi có chủ ý.<br>
+        <b>Từ khoá không có số nghĩa là site chưa từng hiện ra trong kỳ</b> — đó là thông tin thật, không phải lỗi đo, và không được suy thành hạng 0.`)}
+    </div>`;
+  }
+
+  /* --- Từ khoá lên bằng trang khác trang mục tiêu (thêm 15/08/2026) --- */
+  {
+    const chuan = u => {
+      let x=String(u||'').trim(); if(!x) return '';
+      x=x.replace(/^https?:\/\/[^/]+/,'');
+      if(!x.startsWith('/')) x='/'+x;
+      if(!x.endsWith('/')) x+='/';
+      return x.toLowerCase();
+    };
+    const lech = M.kw.filter(k=>k.viUrl && k.url && chuan(k.viUrl)!==chuan(k.url))
+                     .sort((a,b)=>(b.vol||0)-(a.vol||0));
+    const khop = M.kw.filter(k=>k.viUrl && k.url && chuan(k.viUrl)===chuan(k.url)).length;
+    const coUrl = M.kw.filter(k=>k.viUrl).length;
+    /* trang nào đang chiếm chỗ nhiều nhất */
+    const cuop=new Map();
+    lech.forEach(k=>{ const u=chuan(k.viUrl); if(!cuop.has(u)) cuop.set(u,{u,n:0,vol:0,kws:[]});
+      const c=cuop.get(u); c.n++; c.vol+=k.vol||0; if(c.kws.length<4) c.kws.push(k.kw); });
+    const topCuop=[...cuop.values()].sort((a,b)=>b.vol-a.vol).slice(0,8);
+
+    h+=`<div class="sec"><div class="sec-h"><h3>Từ khoá lên bằng trang khác trang mục tiêu</h3>
+        <span class="src">đối chiếu <span class="mono">url_xep_hang</span> với <span class="mono">url_muc_tieu</span> · kỳ ${esc(pLabel(M.selRank))}</span></div>`;
+    if(!coUrl){
+      h+=`<div class="card">${empty('Chưa có URL xếp hạng',
+        `Cột <span class="mono">url_xep_hang</span> trong <b>KEYWORD_RANK_WEEKLY</b> đang trống.
+         Chạy ⚙ Timona SEO → Chỉ kéo lại thứ hạng từ khoá, với ô <span class="mono">gsc_rank_lay_url</span> = TRUE.`)}</div>`;
+    }else{
+      h+=`<div class="kpis">
+        <div class="kpi"><div class="kpi-l">Lên đúng trang mục tiêu</div><div class="kpi-v">${fi(khop)}</div>
+          <div class="kpi-s">trên ${fi(coUrl)} từ khoá có URL</div></div>
+        <div class="kpi"><div class="kpi-l">Lên bằng trang khác</div><div class="kpi-v" style="color:var(--bad)">${fi(lech.length)}</div>
+          <div class="kpi-s">${coUrl?fp(lech.length/coUrl,1):'—'} số từ khoá có URL</div></div>
+        <div class="kpi"><div class="kpi-l">Volume đang lệch</div><div class="kpi-v">${fi(lech.reduce((a,b)=>a+(b.vol||0),0))}</div>
+          <div class="kpi-s">lượt tìm/tháng đổ vào trang không định nhắm</div></div>
+      </div>
+      ${note('info','◆',`<b>Lệch không mặc nhiên là sai.</b> Có ba khả năng, phải mở trang ra xem mới kết luận được:
+        (1) trang mục tiêu ghi trong bảng keyword đặt sai từ đầu, trang thực tế mới đúng ý định tìm kiếm;
+        (2) hai trang cùng nhắm một ý định, Google phải chọn một — ăn thịt từ khoá, cần gộp hoặc phân vai lại;
+        (3) trang mục tiêu yếu hơn nên bị trang khác vượt lên.`)}`;
+
+      if(topCuop.length){
+        h+=`<div class="tw"><table><thead><tr><th>Trang đang chiếm chỗ</th><th class="r">Số từ khoá</th>
+          <th class="r">Volume</th><th>Ví dụ từ khoá</th></tr></thead><tbody>`;
+        topCuop.forEach(c=>{
+          h+=`<tr><td class="mono tt">${esc(c.u)}</td><td class="r"><b>${fi(c.n)}</b></td>
+            <td class="r">${fi(c.vol)}</td>
+            <td style="font-size:12px;color:var(--muted)">${esc(c.kws.join(' · '))}</td></tr>`;
+        });
+        h+=`</tbody></table></div>
+        <div class="cap">Sắp theo volume. Trang xuất hiện nhiều lần ở đây là trang đang gom từ khoá của nhiều trang khác.</div>`;
+      }
+
+      h+=`<div class="tw" style="margin-top:14px"><table id="tb-lech"><thead><tr>
+        ${th('Từ khoá','s')}${th('Volume','n','r')}${th('Vị trí','n','r')}<th>Trang mục tiêu</th><th>Trang đang lên</th>
+        </tr></thead><tbody>`;
+      lech.slice(0,120).forEach(k=>{
+        h+=`<tr><td data-v="${esc(k.kw)}"><b>${esc(k.kw)}</b></td>
+          <td class="r" data-v="${k.vol}">${fi(k.vol)}</td>
+          <td class="r" data-v="${k.vi==null?999:k.vi}">${f1(k.vi)}</td>
+          <td class="mono tt" style="font-size:11px;color:var(--muted)">${esc(chuan(k.url))}</td>
+          <td class="mono tt" style="font-size:11px">${esc(chuan(k.viUrl))}</td></tr>`;
+      });
+      h+=`</tbody></table></div>`;
+      if(lech.length>120) h+=`<div class="cap">Hiện 120 dòng đầu theo volume. Còn ${fi(lech.length-120)} dòng nữa, xem đầy đủ trong Sheet.</div>`;
+    }
+    h+=`</div>`;
   }
 
   /* --- tổng hợp theo chủ đề --- */
@@ -1401,22 +1628,56 @@ function tab2(){
   h+=`</tbody></table></div></div>`;
 
   /* --- Ahrefs phân bố hạng --- */
-  const ah=M.ahrefs.filter(r=>r.k13!=null||r.k410!=null);
+  const ah=M.ahrefs.filter(r=>BAC_RANK.some(b=>r[b.k]!=null))
+    .map(r=>({...r, thieu: BAC_RANK.filter(b=>r[b.k]==null).map(b=>b.ten)}));
   if(ah.length){
-    h+=`<div class="sec"><div class="sec-h"><h3>Đối chiếu phân bố thứ hạng — Ahrefs</h3>
+    const duBac = ah.filter(r=>r.thieu.length===0);
+    h+=`<div class="sec"><div class="sec-h"><h3>Tiến trình phân bố thứ hạng — Ahrefs</h3>
         <span class="src">${esc(M.ahLast?M.ahLast.cauhinh:'')} · ${srcLink('AHREFS_KPI')}</span></div>
-      <div class="tw"><table><thead><tr><th>Ngày lấy</th>
-        <th class="r">Hạng 1–3</th><th class="r">Hạng 4–10</th><th class="r">Hạng 11–20</th><th class="r">Hạng 21–50</th><th>Ghi chú</th></tr></thead><tbody>`;
+      ${note('info','◆',`<b>Biểu đồ này trả lời câu “từ khoá đang đứng thứ mấy”, không trả lời “vị trí đó ra bao nhiêu click”.</b>
+        Chiều cao cột là <b>số từ khoá tuyệt đối</b>, không quy về phần trăm — cột thấp đi nghĩa là
+        tổng số từ khoá đang có hạng giảm thật, đó chính là thứ cần nhìn thấy.`)}
+      ${cotBacAhrefs(ah)}`;
+
+    /* bảng chênh lệch từng bậc so mốc liền trước */
+    h+=`<div class="tw" style="margin-top:10px"><table><thead><tr><th>Ngày lấy</th>
+        ${BAC_RANK.map(b=>`<th class="r">Hạng ${b.ten}</th>`).join('')}
+        <th class="r">Tổng</th><th>Ghi chú</th></tr></thead><tbody>`;
     ah.forEach((r,i)=>{
       const pv=ah[i-1];
-      const d = pv? delta(r.k13, pv.k13,'up').html : '';
-      h+=`<tr><td><b>${dvn(r.ngay)}</b></td>
-        <td class="r"><b>${fi(r.k13)}</b> ${d}</td><td class="r">${fi(r.k410)}</td>
-        <td class="r">${fi(r.k1120)}</td><td class="r">${fi(r.k2150)}</td>
+      const tong = BAC_RANK.reduce((a,b)=>a+(r[b.k]||0),0);
+      const tongPv = pv? BAC_RANK.reduce((a,b)=>a+(pv[b.k]||0),0) : null;
+      const oCell = b=>{
+        if(r[b.k]==null) return `<td class="r" style="color:var(--faint)" title="Mốc này chưa điền bậc ${b.ten}">—</td>`;
+        /* chỉ so khi cả hai mốc cùng có số, tránh so số thật với ô trống */
+        const ch = (pv && pv[b.k]!=null) ? r[b.k]-pv[b.k] : null;
+        const chip = ch==null ? '' :
+          `<span class="chip ${ch>0?'chip-up':ch<0?'chip-down':'chip-flat'}">${ch>0?'+':''}${fi(ch)}</span>`;
+        return `<td class="r"><b>${fi(r[b.k])}</b> ${chip}</td>`;
+      };
+      h+=`<tr><td><b>${dvn(r.ngay)}</b>${r.thieu.length?` <span class="bd bd-md" title="Chưa điền bậc: ${esc(r.thieu.join(', '))}">khuyết bậc</span>`:''}</td>
+        ${BAC_RANK.map(oCell).join('')}
+        <td class="r">${r.thieu.length? `<span style="color:var(--faint)" title="Thiếu bậc nên tổng chưa đầy đủ">${fi(tong)}*</span>` : `<b>${fi(tong)}</b>`}</td>
         <td style="font-size:12px;color:var(--muted)">${esc(r.ghi)}</td></tr>`;
     });
-    h+=`</tbody></table></div>
-      <div class="cap">Số Ahrefs là ước lượng của bên thứ ba, dùng để đối chiếu xu hướng — không thay thế số Search Console.
+    h+=`</tbody></table></div>`;
+
+    if(ah.some(r=>r.thieu.length)){
+      h+=`<div style="margin-top:8px">${note('warn','⚠︎',
+        `<b>Có mốc chưa điền đủ 5 bậc nên biểu đồ chưa so ngang được.</b>
+         ${ah.filter(r=>r.thieu.length).map(r=>`${dvn(r.ngay)} thiếu bậc ${esc(r.thieu.join(', '))}`).join(' · ')}.
+         Ô trống <b>không phải số 0</b> — dashboard cố ý bỏ trống thay vì suy ra, và tổng có dấu <b>*</b> là tổng chưa đầy đủ.
+         Điền nốt vào tab <b>AHREFS_KPI</b>, giữ nguyên cấu hình lấy số.`)}</div>`;
+    }
+    if(duBac.length<4){
+      h+=`<div style="margin-top:8px">${note('mut','ℹ︎',
+        `Mới có <b>${fi(ah.length)} mốc đo</b>. Hai hay ba mốc chỉ đủ để thấy chiều biến động,
+         <b>chưa đủ để kết luận xu hướng</b> — cần ít nhất 4–5 mốc cách đều nhau.
+         Đề xuất chốt nhịp lấy số cố định ngày 1 và 15 hằng tháng.`)}</div>`;
+    }
+    h+=`<div class="cap">Số Ahrefs là ước lượng của bên thứ ba, dùng để đối chiếu xu hướng — không thay thế số Search Console.
+      Ahrefs đếm những từ khoá <b>Ahrefs thấy website đang có hạng</b>, không phải bộ từ khoá dự án nhắm tới —
+      hai tập khác nhau, đừng đọc thành “đã đưa X từ khoá mục tiêu lên Top 10”.
       Mọi lần lấy phải giữ đúng cấu hình <b>${esc(cfg('ahrefs_cau_hinh'))}</b>, đổi cấu hình là số vênh.</div></div>`;
   }
   return h;
