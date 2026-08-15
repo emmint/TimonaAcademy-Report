@@ -1433,6 +1433,68 @@ function tab2(){
     </div>`;
   }
 
+  /* --- Query ≠ Keyword: hai bộ số đo hai thứ khác nhau (thêm 15/08/2026) --- */
+  {
+    const chuanKw = x => String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
+    const QM = qmData();
+    /* gộp mọi tháng: mỗi truy vấn chỉ đếm MỘT lần, dù xuất hiện nhiều tháng */
+    const gop = new Map();
+    QM.rows.forEach(r=>{
+      const k=chuanKw(r.q);
+      if(!k) return;
+      if(!gop.has(k)) gop.set(k,{c:0,i:0});
+      const g=gop.get(k); g.c+=r.c; g.i+=r.i;
+    });
+    const boTarget = new Set(M.kw.filter(k=>k.theoDoi).map(k=>chuanKw(k.kw)));
+    let qTrong=0,qNgoai=0,cTrong=0,cNgoai=0;
+    gop.forEach((v,k)=>{
+      if(boTarget.has(k)){ qTrong++; cTrong+=v.c; } else { qNgoai++; cNgoai+=v.c; }
+    });
+    const qTong=qTrong+qNgoai, cTong=cTrong+cNgoai;
+    const kwHien = [...boTarget].filter(k=>gop.has(k)).length;
+    const kwChua = boTarget.size - kwHien;
+
+    if(qTong){
+      h+=`<div class="sec"><div class="sec-h"><h3>Truy vấn và từ khoá là hai thứ khác nhau</h3>
+          <span class="src">gộp toàn bộ ${QM.thangs.length} tháng · ${srcLink('GSC_QUERY_MONTHLY')} đối chiếu ${srcLink('KEYWORD_MASTER')}</span></div>
+        <div class="tw"><table><thead><tr>
+          <th>Đang nói về cái gì</th><th class="r">Số lượng</th><th class="r">Click</th><th>Nguồn số</th>
+        </tr></thead><tbody>
+          <tr><td><b>Truy vấn</b> — câu người dùng thật sự gõ vào Google<br>
+            <span style="font-size:12px;color:var(--muted)">Dự án không chọn được, chỉ ghi nhận sau khi việc đã xảy ra</span></td>
+            <td class="r"><b>${fi(qTong)}</b></td><td class="r"><b>${fi(cTong)}</b></td>
+            <td style="font-size:12px;color:var(--muted)">Search Console</td></tr>
+          <tr><td><b>Từ khoá</b> — bộ dự án chủ động chọn để nhắm tới<br>
+            <span style="font-size:12px;color:var(--muted)">Do dự án tự đặt, có thể không ai tìm bằng đúng câu chữ đó</span></td>
+            <td class="r"><b>${fi(boTarget.size)}</b></td><td class="r">—</td>
+            <td style="font-size:12px;color:var(--muted)">Bảng keyword của dự án</td></tr>
+          <tr style="background:var(--blue-xl)"><td><b>Phần trùng nhau</b></td>
+            <td class="r"><b>${fi(qTrong)}</b></td><td class="r"><b>${fi(cTrong)}</b></td>
+            <td style="font-size:12px;color:var(--muted)">giao của hai bộ trên</td></tr>
+        </tbody></table></div>
+
+        <div class="kpis" style="margin-top:12px">
+          <div class="kpi"><div class="kpi-l">Truy vấn nằm ngoài bộ từ khoá</div>
+            <div class="kpi-v">${fp(qNgoai/qTong,1)}</div>
+            <div class="kpi-s">${fi(qNgoai)} truy vấn dự án không nhắm tới</div></div>
+          <div class="kpi"><div class="kpi-l">Click đến từ nhóm ngoài đó</div>
+            <div class="kpi-v">${cTong?fp(cNgoai/cTong,1):'—'}</div>
+            <div class="kpi-s">${fi(cNgoai)} lượt bấm</div></div>
+          <div class="kpi"><div class="kpi-l">Từ khoá chưa từng hiện ra</div>
+            <div class="kpi-v">${fi(kwChua)}</div>
+            <div class="kpi-s">trên ${fi(boTarget.size)} từ khoá đang theo dõi</div></div>
+        </div>
+
+        ${note('warn','◆',`<b>Đừng cộng hai bảng lại với nhau.</b> Bảng truy vấn đếm cái đã xảy ra;
+          bảng từ khoá đếm cái dự án định nhắm. Hai bộ chỉ chồng nhau ở <b>${fi(qTrong)}</b> mục.<br>
+          Có <b>${fi(kwChua)}</b> từ khoá đang theo dõi mà website <b>chưa từng một lần hiện ra</b> trên kết quả tìm —
+          Search Console chỉ báo cáo khi có lượt hiển thị, nên không có số ở đây nghĩa là chưa xuất hiện,
+          không phải lỗi đo và không phải hạng 0.<br>
+          Ngược lại, <b>${fp(cTong?cNgoai/cTong:0,0)}</b> lượt bấm đến từ những câu tìm dự án không hề nhắm tới.`)}
+      </div>`;
+    }
+  }
+
   /* --- Cách đọc số của kỳ dài + độ phủ (thêm 15/08/2026, mục D5) --- */
   {
     const nTheoDoi = M.kw.filter(k=>k.theoDoi).length;
@@ -1470,73 +1532,6 @@ function tab2(){
         Kỳ càng dài thì càng nhiều từ khoá có số, nhưng số càng trễ so với hôm nay. Đây là đánh đổi có chủ ý.<br>
         <b>Từ khoá không có số nghĩa là site chưa từng hiện ra trong kỳ</b> — đó là thông tin thật, không phải lỗi đo, và không được suy thành hạng 0.`)}
     </div>`;
-  }
-
-  /* --- Từ khoá lên bằng trang khác trang mục tiêu (thêm 15/08/2026) --- */
-  {
-    const chuan = u => {
-      let x=String(u||'').trim(); if(!x) return '';
-      x=x.replace(/^https?:\/\/[^/]+/,'');
-      if(!x.startsWith('/')) x='/'+x;
-      if(!x.endsWith('/')) x+='/';
-      return x.toLowerCase();
-    };
-    const lech = M.kw.filter(k=>k.viUrl && k.url && chuan(k.viUrl)!==chuan(k.url))
-                     .sort((a,b)=>(b.vol||0)-(a.vol||0));
-    const khop = M.kw.filter(k=>k.viUrl && k.url && chuan(k.viUrl)===chuan(k.url)).length;
-    const coUrl = M.kw.filter(k=>k.viUrl).length;
-    /* trang nào đang chiếm chỗ nhiều nhất */
-    const cuop=new Map();
-    lech.forEach(k=>{ const u=chuan(k.viUrl); if(!cuop.has(u)) cuop.set(u,{u,n:0,vol:0,kws:[]});
-      const c=cuop.get(u); c.n++; c.vol+=k.vol||0; if(c.kws.length<4) c.kws.push(k.kw); });
-    const topCuop=[...cuop.values()].sort((a,b)=>b.vol-a.vol).slice(0,8);
-
-    h+=`<div class="sec"><div class="sec-h"><h3>Từ khoá lên bằng trang khác trang mục tiêu</h3>
-        <span class="src">đối chiếu <span class="mono">url_xep_hang</span> với <span class="mono">url_muc_tieu</span> · kỳ ${esc(pLabel(M.selRank))}</span></div>`;
-    if(!coUrl){
-      h+=`<div class="card">${empty('Chưa có URL xếp hạng',
-        `Cột <span class="mono">url_xep_hang</span> trong <b>KEYWORD_RANK_WEEKLY</b> đang trống.
-         Chạy ⚙ Timona SEO → Chỉ kéo lại thứ hạng từ khoá, với ô <span class="mono">gsc_rank_lay_url</span> = TRUE.`)}</div>`;
-    }else{
-      h+=`<div class="kpis">
-        <div class="kpi"><div class="kpi-l">Lên đúng trang mục tiêu</div><div class="kpi-v">${fi(khop)}</div>
-          <div class="kpi-s">trên ${fi(coUrl)} từ khoá có URL</div></div>
-        <div class="kpi"><div class="kpi-l">Lên bằng trang khác</div><div class="kpi-v" style="color:var(--bad)">${fi(lech.length)}</div>
-          <div class="kpi-s">${coUrl?fp(lech.length/coUrl,1):'—'} số từ khoá có URL</div></div>
-        <div class="kpi"><div class="kpi-l">Volume đang lệch</div><div class="kpi-v">${fi(lech.reduce((a,b)=>a+(b.vol||0),0))}</div>
-          <div class="kpi-s">lượt tìm/tháng đổ vào trang không định nhắm</div></div>
-      </div>
-      ${note('info','◆',`<b>Lệch không mặc nhiên là sai.</b> Có ba khả năng, phải mở trang ra xem mới kết luận được:
-        (1) trang mục tiêu ghi trong bảng keyword đặt sai từ đầu, trang thực tế mới đúng ý định tìm kiếm;
-        (2) hai trang cùng nhắm một ý định, Google phải chọn một — ăn thịt từ khoá, cần gộp hoặc phân vai lại;
-        (3) trang mục tiêu yếu hơn nên bị trang khác vượt lên.`)}`;
-
-      if(topCuop.length){
-        h+=`<div class="tw"><table><thead><tr><th>Trang đang chiếm chỗ</th><th class="r">Số từ khoá</th>
-          <th class="r">Volume</th><th>Ví dụ từ khoá</th></tr></thead><tbody>`;
-        topCuop.forEach(c=>{
-          h+=`<tr><td class="mono tt">${esc(c.u)}</td><td class="r"><b>${fi(c.n)}</b></td>
-            <td class="r">${fi(c.vol)}</td>
-            <td style="font-size:12px;color:var(--muted)">${esc(c.kws.join(' · '))}</td></tr>`;
-        });
-        h+=`</tbody></table></div>
-        <div class="cap">Sắp theo volume. Trang xuất hiện nhiều lần ở đây là trang đang gom từ khoá của nhiều trang khác.</div>`;
-      }
-
-      h+=`<div class="tw" style="margin-top:14px"><table id="tb-lech"><thead><tr>
-        ${th('Từ khoá','s')}${th('Volume','n','r')}${th('Vị trí','n','r')}<th>Trang mục tiêu</th><th>Trang đang lên</th>
-        </tr></thead><tbody>`;
-      lech.slice(0,120).forEach(k=>{
-        h+=`<tr><td data-v="${esc(k.kw)}"><b>${esc(k.kw)}</b></td>
-          <td class="r" data-v="${k.vol}">${fi(k.vol)}</td>
-          <td class="r" data-v="${k.vi==null?999:k.vi}">${f1(k.vi)}</td>
-          <td class="mono tt" style="font-size:11px;color:var(--muted)">${esc(chuan(k.url))}</td>
-          <td class="mono tt" style="font-size:11px">${esc(chuan(k.viUrl))}</td></tr>`;
-      });
-      h+=`</tbody></table></div>`;
-      if(lech.length>120) h+=`<div class="cap">Hiện 120 dòng đầu theo volume. Còn ${fi(lech.length-120)} dòng nữa, xem đầy đủ trong Sheet.</div>`;
-    }
-    h+=`</div>`;
   }
 
   /* --- tổng hợp theo chủ đề --- */
