@@ -279,12 +279,13 @@ const GID = {
   KEYWORD_MASTER:'580417143', KEYWORD_RANK_WEEKLY:'165606809',
   AHREFS_KPI:'1681573242', AI_RESPONSES:'379237336', SITE_ISSUES:'1118437563',
   AI_RANK_LOG:'1522076847', USP_CHECKLIST:'540045851', USP_CHECK_LOG:'921116997',
-  GA4_DAILY:''      // tab tạo sau, chưa có GID — đọc bằng tên tab
+  GA4_DAILY:'',     // tab tạo sau, chưa có GID — đọc bằng tên tab
+  LEAD:''           // dữ liệu form đăng ký, đổ vào sau
 };
 /* Cột bắt buộc của mỗi tab. Dùng để chặn một cái bẫy của Google:
    gọi gviz với tên tab không tồn tại thì nó trả về tab ĐẦU TIÊN kèm mã 200,
    không hề báo lỗi. Không kiểm cột thì dashboard sẽ nuốt nhầm dữ liệu tab khác. */
-const COT_BUOC = { GA4_DAILY:['ngay','sessions'] };
+const COT_BUOC = { GA4_DAILY:['ngay','sessions'], LEAD:['ngay'] };
 const TABS = [
   {id:0,n:'0',t:'Tổng quan'},
   {id:1,n:'1',t:'Traffic'},
@@ -329,10 +330,13 @@ function parseCSV(txt){
 function ngPhu(bust){ return bust ? '&_nc='+Date.now() : ''; }
 const B = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
 
+/* headers=1 là BẮT BUỘC. Không có nó, Google tự đoán xem mấy dòng đầu là tiêu đề,
+   và đoán sai với tab toàn chữ: tab CONFIG từng bị gộp 3 dòng đầu thành một dòng
+   tiêu đề "key site_url gsc_property", nuốt mất 2 dòng dữ liệu mà không báo gì. */
 async function fetchTab(name, gid, bust){
   const ds = [];
-  if(gid) ds.push(`${B}/gviz/tq?tqx=out:csv&gid=${gid}${ngPhu(bust)}`);
-  ds.push(`${B}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}${ngPhu(bust)}`);
+  if(gid) ds.push(`${B}/gviz/tq?tqx=out:csv&headers=1&gid=${gid}${ngPhu(bust)}`);
+  ds.push(`${B}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(name)}${ngPhu(bust)}`);
   if(gid) ds.push(`${B}/export?format=csv&gid=${gid}${ngPhu(bust)}`);
 
   for(const u of ds){
@@ -354,7 +358,7 @@ async function fetchTab(name, gid, bust){
   return [];
 }
 /* Tab chưa chắc tồn tại — không đọc được thì bỏ qua lặng lẽ, không báo lỗi đỏ. */
-const TAB_TUY_CHON = new Set(['GA4_DAILY']);
+const TAB_TUY_CHON = new Set(['GA4_DAILY','LEAD']);
 
 /* ============================================================================
    2 · ĐỌC SỐ — Sheet đang để ngôn ngữ Việt: "." ngăn nghìn, "," thập phân
@@ -679,6 +683,25 @@ function prep(){
     }
   }
 
+  /* --- LEAD: khách điền form. Tab có thể chưa có dữ liệu. --- */
+  M.lead = (D.LEAD||[]).map(r=>({
+    ngay:dOnly(r.ngay), form:r.ten_form||'(không rõ)',
+    url:(r.url_trang||'').replace(/^https?:\/\/[^/]+/,''),
+    nguon:r.nguon||'', ghi:r.ghi_chu||''
+  })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.ngay)).sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  M.coLead = M.lead.length>0;
+  if(M.coLead){
+    M.leadDau=M.lead[0].ngay; M.leadCuoi=M.lead[M.lead.length-1].ngay;
+    const den=M.lastDay||M.leadCuoi, tu=addDays(den,-(M.N-1));
+    M.leadKy = M.lead.filter(l=>l.ngay>=tu&&l.ngay<=den).length;
+    const den2=addDays(den,-M.N), tu2=addDays(den2,-(M.N-1));
+    M.leadKyTruoc = M.lead.filter(l=>l.ngay>=tu2&&l.ngay<=den2).length;
+    /* Tỷ lệ đổi click thành lead — chỉ tính trên khoảng ngày mà CẢ HAI nguồn cùng có dữ liệu */
+    const clk = M.daily.filter(d=>d.ngay>=M.leadDau&&d.ngay<=M.leadCuoi).reduce((a,b)=>a+b.clicks,0);
+    M.leadTrenClick = clk ? M.lead.length/clk : null;
+    M.leadClickNen = clk;
+  }
+
   /* --- Ahrefs --- */
   M.ahrefs = (D.AHREFS_KPI||[]).map(r=>({
     ngay:dOnly(r.ngay_lay), cauhinh:r.cau_hinh||'',
@@ -927,6 +950,9 @@ function tab0(){
       ${kpi({lab:'AI trích dẫn Timona', val:fi(M.aiTotal), unit:'lượt', sub:`${M.ai.length} nền tảng · ${M.aiDate?dvn(M.aiDate):'—'}`})}
     </div></div>`;
 
+  /* --- Lead: chỉ số duy nhất nối SEO với doanh thu --- */
+  h += khoiLead();
+
   /* --- việc cần chú ý --- */
   const hot=M.issues.filter(i=>i.muc==='cao' && i.tt!=='da_xong' && i.tt!=='khong_xu_ly');
   const late=M.log.filter(l=>l.tt==='QUÁ HẠN'||l.tt==='CHƯA CÓ');
@@ -1005,6 +1031,61 @@ function khoiGA4(){
         ${!du?`<br><b>Chưa so kỳ được:</b> kỳ trước mới có ${k1?k1.ngay:0}/${M.N} ngày dữ liệu.`:''}
       </div>
     </div></div>`;
+}
+/* Khối lead. Chưa nối dữ liệu thì hiện đúng trạng thái đó, không giấu đi —
+   để người đọc biết còn thiếu chứ không tưởng là bằng 0. */
+function khoiLead(){
+  const h0 = `<div class="sec"><div class="sec-h">
+      <span class="eyebrow">Ra tiền</span><h3>Khách để lại thông tin</h3>
+      <span class="src">${srcLink('LEAD')}</span></div>`;
+
+  if(!M.coLead){
+    return h0 + `<div class="card">${empty('Chưa nối dữ liệu form đăng ký',
+      `Website <b>có</b> lưu thông tin khách điền form, nhưng chưa đổ vào bảng này nên báo cáo chưa tính được.
+       <br><br>Cách nối: tạo tab <b>LEAD</b> trong Google Sheet với 5 cột
+       <span class="mono">ngay · ten_form · url_trang · nguon · ghi_chu</span>, mỗi dòng là một lượt khách điền form.
+       Dán dữ liệu vào là khối này tự hiện, không cần sửa gì thêm.
+       <br><br>Đây là chỉ số duy nhất nối được kết quả SEO với doanh thu. Mọi con số khác trong báo cáo
+       đều dừng ở mức lưu lượng truy cập.`)}</div></div>`;
+  }
+
+  const d = delta(M.leadKy, M.leadKyTruoc, 'up');
+  const theoForm = {};
+  M.lead.forEach(l=>{ theoForm[l.form]=(theoForm[l.form]||0)+1; });
+  const dsForm = Object.keys(theoForm).sort((a,b)=>theoForm[b]-theoForm[a]);
+
+  const theoTrang = {};
+  let coUrl = 0;
+  M.lead.forEach(l=>{ if(l.url){ theoTrang[l.url]=(theoTrang[l.url]||0)+1; coUrl++; } });
+  const dsTrang = Object.keys(theoTrang).sort((a,b)=>theoTrang[b]-theoTrang[a]).slice(0,10);
+
+  let h = h0 + `<div class="grid g4" style="margin-bottom:14px">
+    ${kpi({lab:'Tổng khách để lại thông tin', val:fi(M.lead.length), cls:'k-up',
+           sub:`${dvn(M.leadDau)} → ${dvn(M.leadCuoi)}`})}
+    ${kpi({lab:`${M.N} ngày gần nhất`, val:fi(M.leadKy), sub:`${d.html} so kỳ trước (${fi(M.leadKyTruoc)})`})}
+    ${kpi({lab:'Cứ bao nhiêu click ra 1 khách', val: M.leadTrenClick? fi(Math.round(1/M.leadTrenClick)) : '—',
+           unit:'click', sub: M.leadTrenClick? `tỷ lệ ${fp(M.leadTrenClick,2)} trên ${fi(M.leadClickNen)} click` : ''})}
+    ${kpi({lab:'Số form đang chạy', val:fi(dsForm.length), sub: dsForm.slice(0,2).map(esc).join(' · ')})}
+  </div>`;
+
+  h += `<div class="grid g2">
+    <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Theo từng form</h4>
+      ${hbarChart({items:dsForm.slice(0,6).map(f=>({k:f.length>22?f.slice(0,21)+'…':f, v:theoForm[f]})),
+                   lw:150, w:600, mr:60, color:CO.up})}
+    </div>
+    <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Khách điền form ở trang nào</h4>`;
+
+  if(!coUrl){
+    h += empty('Chưa có thông tin trang nguồn',
+      `Dữ liệu form không lưu địa chỉ trang mà khách đã điền, nên chưa trả lời được câu
+       “data đến từ những page nào”. Cần thêm một trường ẩn vào form để ghi lại, áp dụng từ nay về sau.`);
+  }else{
+    h += `<div class="tw" style="box-shadow:none;border:0"><table><thead><tr><th>Trang</th><th class="r">Số khách</th></tr></thead><tbody>`
+       + dsTrang.map(u=>`<tr><td class="mono tt">${esc(u)}</td><td class="r"><b>${fi(theoTrang[u])}</b></td></tr>`).join('')
+       + `</tbody></table></div>`
+       + (coUrl<M.lead.length ? `<div class="cap">${fi(M.lead.length-coUrl)}/${fi(M.lead.length)} lượt không ghi trang nguồn.</div>` : '');
+  }
+  return h + `</div></div></div>`;
 }
 function statusBadge(t){
   const map={cho_quyet:['bd-md','chờ quyết'], moi:['bd-hi','mới'], dang_xu_ly:['bd-bn','đang xử lý'],
