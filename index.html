@@ -1394,7 +1394,12 @@ function tab0(){
                Biểu đồ chủ đề bên cạnh vẫn dùng nguồn trang vì chủ đề gắn với nội dung bài. */
             const m=(M.months||[]).find(x=>x.thang===thangQM);
             const phu = m && m.clicks ? clickT/m.clicks : null;
-            return `<h4 style="font-size:13px;margin-bottom:6px">Phân loại truy vấn theo ý định</h4>
+            return `<h4 style="font-size:13px;margin-bottom:4px">Phân loại truy vấn theo ý định · ${
+                esc(thangQM||'—')} · ${fi(clickT)} lượt click</h4>
+              <div class="cap" style="margin:0 0 8px">Phân loại theo <b>câu người ta gõ vào Google</b>, khác biểu đồ
+                bên cạnh (phân loại theo trang). Google chỉ trả tối đa 1.000 truy vấn mỗi tháng nên khối này
+                đọc được ${phu!=null?fp(phu,0):'một phần'} tổng lượt click — tỷ trọng giữa bốn nhóm đáng tin,
+                số tuyệt đối thấp hơn thực tế.</div>
               ${cotXepThang(QM.thangs, QM.rows, 'yd', YD, MAUY)}
               <div class="legend">${YD.map((k,i)=>`<span><i style="background:${MAUY[i]}"></i>${esc(k)}</span>`).join('')}</div>
               <div class="cap" style="line-height:1.7">
@@ -1404,11 +1409,7 @@ function tab0(){
                 <b>3 · Cân nhắc · so sánh</b> — đang chọn chỗ hoặc chọn nghề: học ở đâu, chỗ nào uy tín,
                   top mấy, review, nên học nghề gì, lương bao nhiêu, học bao lâu.<br>
                 <b>4 · Kiến thức chuyên môn</b> — hỏi kiến thức nghề, chưa nhắc gì tới chuyện đi học.
-                  Đây là nhóm mặc định: không khớp ba nhóm trên thì rơi vào đây.<br>
-                <span style="display:inline-block;margin-top:6px">Phân loại theo <b>câu người ta gõ vào Google</b>,
-                khác biểu đồ bên cạnh (phân loại theo trang). Google chỉ trả tối đa 1.000 truy vấn mỗi tháng
-                nên khối này đọc được ${fi(clickT)} lượt click${phu!=null?`, bằng ${fp(phu,0)} tổng`:''} —
-                tỷ trọng giữa bốn nhóm đáng tin, số tuyệt đối thấp hơn thực tế.</span>
+                  Đây là nhóm mặc định: không khớp ba nhóm trên thì rơi vào đây.
               </div>`;
           })()}
         </div>
