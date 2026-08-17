@@ -1015,110 +1015,258 @@ function th(label, type, cls){
 function tab0(){
   const p0=M.periods[0], p1=M.periods[1];
   const dCl=delta(p0&&p0.clicks, p1&&p1.clicks,'up');
-  const dCtr=delta(p0&&p0.ctr, p1&&p1.ctr,'up');
-  const dPos=delta(p0&&p0.pos, p1&&p1.pos,'down');
-  const ps=pageSplit(M.selPage);
   const ah=M.ahLast||{};
-
   let h='';
 
-  /* --- KPI hàng 1 --- */
-  h+=`<div class="sec"><div class="sec-h">
-      <span class="eyebrow">Chỉ số lõi</span>
-      <h2>${M.N} ngày gần nhất</h2>
-      <span class="src">${p0?`${dvn(p0.tu)} → ${dvn(p0.den)}`:''} · ${freshness('gsc')}</span>
-    </div>
-    <div class="grid g4">
-      ${kpi({lab:'Click từ Google', val:fi(p0&&p0.clicks), cls:dCl.dir<0?'k-down':'', sub:`${dCl.html} so với ${M.N} ngày liền trước (${fi(p1&&p1.clicks)})`})}
-      ${kpi({lab:'CTR', val:fp(p0&&p0.ctr), cls:dCtr.dir<0?'k-down':'', sub:`${dCtr.html} · ${fi(p0&&p0.impr)} lượt hiển thị`})}
-      ${kpi({lab:'Vị trí trung bình', val:f1(p0&&p0.pos), cls:dPos.dir<0?'k-warn':'', sub:`${dPos.html} · càng nhỏ càng tốt`})}
-      ${kpi({lab:'Bấm vào trang khoá học', val: ps.pctTM==null?'—':fp(ps.pctTM,1),
-             sub: `${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)} trên ${fi(ps.tot.c)} lượt bấm · trang khoá học, học phí, tuyển sinh`})}
-    </div></div>`;
-
-  /* --- SIGNATURE: băng nghịch lý --- */
-  const mm=M.months.filter(m=>!m.partial);
-  h+=`<div class="sec"><div class="para">
-      <div class="para-h">
-        <div class="lead">
-          <span class="eyebrow">Điều phải đọc trước tiên</span>
-          <h2>Thứ hạng đi lên, lượt click đi xuống</h2>
-          <p>Website leo từ vị trí trung bình ${f1(M.firstFull&&M.firstFull.pos)} (${esc(M.firstFull?M.firstFull.thang:'—')}) lên ${f1(M.lastFull&&M.lastFull.pos)} (${esc(M.lastFull?M.lastFull.thang:'—')}),
-             nhưng click vẫn rơi. Nguyên nhân không nằm ở thứ hạng: Google trả lời thẳng trên trang kết quả
-             (AI Overviews, đoạn trích) nên người dùng không cần bấm vào nữa.
-             Đây là lý do báo cáo lấy <b>click</b> làm thước đo chính thức, không lấy thứ hạng.</p>
-        </div>
-        <div class="para-stat">
-          <div><div class="v dn num">${M.dropPct==null?'—':nf1.format(M.dropPct*100)+'%'}</div><div class="l">Click, đỉnh → nay</div></div>
-          <div><div class="v up num">${M.firstFull&&M.lastFull? '−'+nf1.format(((M.firstFull.pos-M.lastFull.pos)/M.firstFull.pos)*100)+'%':'—'}</div><div class="l">Vị trí TB (tốt hơn)</div></div>
-          <div><div class="v dn num">${M.firstFull&&M.lastFull? nf2.format(M.firstFull.ctr*100)+'% → '+nf2.format(M.lastFull.ctr*100)+'%':'—'}</div><div class="l">CTR</div></div>
-        </div>
+  /* ============ 1 · DATA KHÁCH ĐỂ LẠI ============ */
+  {
+    const thangNay = (M.months&&M.months.length)? M.months[M.months.length-1].thang : '';
+    const soLead = M.coLead ? M.lead.filter(l=>String(l.ngay||'').slice(0,7)===thangNay).length : 0;
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">1 · Ra tiền</span>
+        <h2>Khách để lại thông tin</h2>
+        <span class="src">tháng ${esc(thangNay)} · ${srcLink('LEAD')}</span></div>`;
+    if(!M.coLead || !M.lead.length){
+      h+=`<div class="g4" style="margin-bottom:12px">
+        ${kpi({lab:'Khách để lại thông tin tháng này', val:'—', cls:'k-warn', sub:'chưa đổ dữ liệu vào bảng LEAD'})}
+        ${kpi({lab:'Từ trang nào', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
+        ${kpi({lab:'Cứ bao nhiêu lượt bấm ra 1 khách', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
+        ${kpi({lab:'Form nào nhiều nhất', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
       </div>
-      <div class="para-box">
-        ${comboChart({
-          labels: M.months.map(m=>m.thang.slice(2).replace('-','/')),
-          bars: M.months.map(m=>m.clicks),
-          barColors: M.months.map(m=> m.partial? 'rgba(91,166,220,.35)' : CO.blueL),
-          barUnit:' click',
-          line:{data:M.months.map(m=>m.pos), color:'#FFC24D', invert:true, min:0, max:20, fmt:v=>nf1.format(v)},
-          dark:true, h:230, maxLabels:17, aria:'Click theo tháng và vị trí trung bình'
-        })}
-        <div class="legend" style="color:#A9C6E4">
-          <span><i style="background:${CO.blueL}"></i>Click / tháng — trục trái</span>
-          <span><i style="background:rgba(91,166,220,.35)"></i>Tháng khuyết ngày</span>
-          <span><i style="background:#FFC24D"></i>Vị trí TB — trục phải, đảo chiều (đường lên = hạng tốt hơn)</span>
-        </div>
+      <div class="cap">Dán dữ liệu vào tab <span class="mono">LEAD</span> theo 5 cột
+        <span class="mono">ngay · ten_form · url_trang · nguon · ghi_chu</span> — mỗi dòng một lượt khách điền form.
+        Khối này tự hiện đủ số, không phải sửa gì thêm.</div></div>`;
+    }else{
+      const ky = M.lead.filter(l=>String(l.ngay||'').slice(0,7)===thangNay);
+      const gTrang=new Map(), gForm=new Map(), gNguon=new Map();
+      ky.forEach(l=>{
+        const u=(l.url||'—').replace(/^https?:\/\/[^/]+/,'')||'/';
+        gTrang.set(u,(gTrang.get(u)||0)+1);
+        gForm.set(l.form||'—',(gForm.get(l.form||'—')||0)+1);
+        gNguon.set(l.nguon||'—',(gNguon.get(l.nguon||'—')||0)+1);
+      });
+      const dsTrang=[...gTrang.entries()].sort((a,b)=>b[1]-a[1]);
+      const dsForm=[...gForm.entries()].sort((a,b)=>b[1]-a[1]);
+      const clickKy=p0?p0.clicks:0;
+      h+=`<div class="g4" style="margin-bottom:12px">
+        ${kpi({lab:'Khách để lại thông tin tháng này', val:fi(ky.length), cls:'k-up', sub:`tổng mọi kỳ ${fi(M.lead.length)}`})}
+        ${kpi({lab:'Số trang mang về khách', val:fi(dsTrang.length), sub:dsTrang.length?`nhiều nhất: ${esc(dsTrang[0][0])}`:'—'})}
+        ${kpi({lab:'Cứ bao nhiêu lượt bấm ra 1 khách', val: ky.length&&clickKy? fi(Math.round(clickKy/ky.length)) : '—',
+               sub:`${fi(clickKy)} lượt bấm trong ${M.N} ngày`})}
+        ${kpi({lab:'Form nhiều nhất', val:dsForm.length?fi(dsForm[0][1]):'—', sub:dsForm.length?esc(dsForm[0][0]):'—'})}
       </div>
-      <div class="para-note">
-        <b>Cách đọc:</b> đường vàng đi lên nghĩa là thứ hạng tốt lên. Cột xanh thấp dần nghĩa là click ít đi.
-        Mọi con số so sánh ở trên lấy mốc gốc là <b>${esc(M.firstFull?M.firstFull.thang:'—')}</b> — tháng đủ ngày đầu tiên.
-        Các tháng nhạt màu (${M.months.filter(m=>m.partial).map(m=>m.thang).join(', ')||'—'}) thiếu ngày nên bị loại khỏi mọi phép so sánh.
+      <div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Tiêu đề</th>
+        <th class="r">Số khách</th><th class="r">Tỷ trọng</th></tr></thead><tbody>`;
+      dsTrang.slice(0,15).forEach(([u,n])=>{
+        h+=`<tr><td class="mono tt">${esc(u)}</td><td class="tt2">${esc(titleCua(u))}</td>
+          <td class="r"><b>${fi(n)}</b></td><td class="r">${fp(n/ky.length,1)}</td></tr>`;
+      });
+      h+=`</tbody></table></div></div>`;
+    }
+  }
+
+  /* ============ 2 · TRAFFIC TOÀN WEB THEO NGUỒN ============ */
+  {
+    const ch=(D.GA4_CHANNEL||[]).map(r=>({th:r.thang, ng:r.nguon||'—', se:toInt(r.sessions)||0, us:toInt(r.users)||0})).filter(r=>r.th);
+    const ths=[...new Set(ch.map(r=>r.th))].sort();
+    const tCuoi=ths.length?ths[ths.length-1]:null;
+    const cur=ch.filter(r=>r.th===tCuoi);
+    const tot=cur.reduce((a,b)=>a+b.se,0);
+    const truoc=ths.length>1? ch.filter(r=>r.th===ths[ths.length-2]).reduce((a,b)=>a+b.se,0) : null;
+    const dTot=delta(tot,truoc,'up');
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">2 · Lưu lượng</span>
+        <h2>Traffic toàn website đến từ đâu</h2>
+        <span class="src">tháng ${esc(tCuoi||'—')} · GA4 · ${srcLink('GA4_CHANNEL')}</span></div>`;
+    if(!tot){ h+=`<div class="card">${empty('Chưa có dữ liệu GA4 theo kênh','')}</div></div>`; }
+    else{
+      const org=cur.find(r=>/organic search/i.test(r.ng));
+      const soc=cur.find(r=>/social/i.test(r.ng));
+      const dir=cur.find(r=>/direct/i.test(r.ng));
+      h+=`<div class="g4" style="margin-bottom:12px">
+        ${kpi({lab:'Tổng phiên truy cập', val:fi(tot), cls:dTot.dir<0?'k-down':'', sub:`${dTot.html} so tháng trước`})}
+        ${kpi({lab:'Từ tìm kiếm tự nhiên', val:org?fp(org.se/tot,1):'—', sub:`${fi(org?org.se:0)} phiên`})}
+        ${kpi({lab:'Từ mạng xã hội', val:soc?fp(soc.se/tot,1):'—', sub:`${fi(soc?soc.se:0)} phiên`})}
+        ${kpi({lab:'Vào thẳng', val:dir?fp(dir.se/tot,1):'—', sub:`${fi(dir?dir.se:0)} phiên`})}
       </div>
-    </div></div>`;
+      <div class="tw"><table><thead><tr><th>Nguồn</th><th class="r">Phiên</th><th class="r">Người dùng</th><th class="r">Tỷ trọng</th></tr></thead><tbody>`;
+      cur.slice().sort((a,b)=>b.se-a.se).forEach(r=>{
+        h+=`<tr><td><b>${esc(r.ng)}</b></td><td class="r"><b>${fi(r.se)}</b></td>
+          <td class="r">${fi(r.us)}</td><td class="r">${fp(r.se/tot,1)}</td></tr>`;
+      });
+      h+=`</tbody></table></div></div>`;
+    }
+  }
 
-  /* --- GA4: chỉ số đối chiếu, chỉ hiện khi tab GA4_DAILY có dữ liệu --- */
-  h += khoiGA4();
+  /* ============ 3 · TRAFFIC SEO: Ý ĐỊNH · CHỦ ĐỀ · TOP TRANG ============ */
+  {
+    const QM=qmData();
+    const thangNay=(M.months&&M.months.length)? M.months[M.months.length-1].thang : null;
+    const rowsT=QM.rows.filter(r=>r.thang===thangNay);
+    const clickT=rowsT.reduce((a,r)=>a+r.c,0);
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">3 · Lưu lượng SEO</span>
+        <h2>Traffic từ Google phân bổ thế nào</h2>
+        <span class="src">tháng ${esc(thangNay||'—')} · ${fi(clickT)} lượt bấm · ${srcLink('GSC_QUERY_MONTHLY')}</span></div>`;
 
-  /* --- KPI hàng 2: uy tín & AI --- */
-  h+=`<div class="sec"><div class="sec-h">
-      <span class="eyebrow">Uy tín & AI</span><h3>Số chép tay từ Ahrefs</h3>
-      <span class="src">${M.ahLast?`lấy ${dvn(M.ahLast.ngay)}`:''} · ${freshness('ahrefs: 6')}</span>
-    </div>
-    <div class="grid g4">
-      ${kpi({lab:'Domain Rating', val:fi(ah.dr), sub:`UR ${fi(ah.ur)} · ${fi(ah.bl)} backlink`})}
-      ${kpi({lab:'Tên miền trỏ về', val:fi(ah.rd), sub:`tổng mọi thời kỳ ${fi(ah.rdAll)}`})}
-      ${kpi({lab:'Từ khoá tự nhiên', val:fi(ah.okw), sub:`trong đó Top 3: <b>${fi(ah.top3)}</b>`})}
-      ${kpi({lab:'AI trích dẫn Timona', val:fi(M.aiTotal), unit:'lượt', sub:`${M.ai.length} nền tảng · ${M.aiDate?dvn(M.aiDate):'—'}`})}
-    </div></div>`;
-
-  /* --- Lead: chỉ số duy nhất nối SEO với doanh thu --- */
-  h += khoiLead();
-
-  /* --- việc cần chú ý --- */
-  const hot=M.issues.filter(i=>i.muc==='cao' && i.tt!=='da_xong' && i.tt!=='khong_xu_ly');
-  const late=M.log.filter(l=>l.tt==='QUÁ HẠN'||l.tt==='CHƯA CÓ');
-  h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Cần xử lý</span><h3>Việc mức cao đang mở</h3>
-      <span class="src">${srcLink('SITE_ISSUES')}</span></div>`;
-  if(!hot.length) h+=`<div class="card">${empty('Không có việc mức cao nào đang mở','')}</div>`;
-  else{
-    h+=`<div class="tw"><table><thead><tr>
-      <th>Mã</th><th>Nhóm</th><th>Nội dung</th><th>Ảnh hưởng</th><th>Trạng thái</th></tr></thead><tbody>`;
-    hot.forEach(i=>{
-      h+=`<tr><td class="mono">${esc(i.id)}</td><td><span class="bd bd-hi">${esc(nhomLoi(i.nhom))}</span></td>
-        <td class="tt2">${esc(i.mo)}</td>
-        <td class="mono tt">${i.url?esc(i.url):'—'}</td>
-        <td>${statusBadge(i.tt)}</td></tr>`;
+    /* --- theo ý định --- */
+    const gY=new Map();
+    rowsT.forEach(r=>{ const k=r.yd||'—'; if(!gY.has(k)) gY.set(k,{k,c:0,i:0}); const o=gY.get(k); o.c+=r.c; o.i+=r.i; });
+    const dsY=[...gY.values()].sort((a,b)=>b.c-a.c);
+    h+=`<h3 style="font-size:14px;margin:14px 0 8px">Theo ý định người tìm</h3>
+      <div class="tw"><table><thead><tr><th>Ý định</th><th class="r">Lượt bấm</th><th class="r">Tỷ trọng</th>
+        <th class="r">Lượt hiện ra</th><th class="r">Tỷ lệ bấm</th></tr></thead><tbody>`;
+    dsY.forEach(y=>{
+      h+=`<tr><td><b>${esc(y.k)}</b></td><td class="r"><b>${fi(y.c)}</b></td>
+        <td class="r">${clickT?fp(y.c/clickT,1):'—'}</td><td class="r">${fi(y.i)}</td>
+        <td class="r">${y.i?fp(y.c/y.i,2):'—'}</td></tr>`;
     });
     h+=`</tbody></table></div>`;
+
+    /* --- theo chủ đề --- */
+    const gC=new Map();
+    rowsT.forEach(r=>{ const k=r.cd||'—'; if(!gC.has(k)) gC.set(k,{k,c:0,i:0,n:0}); const o=gC.get(k); o.c+=r.c; o.i+=r.i; o.n++; });
+    const dsC=[...gC.values()].sort((a,b)=>b.c-a.c).slice(0,12);
+    h+=`<h3 style="font-size:14px;margin:18px 0 8px">Theo danh mục chủ đề</h3>
+      <div class="tw"><table><thead><tr><th>Chủ đề</th><th class="r">Lượt bấm</th><th class="r">Tỷ trọng</th>
+        <th class="r">Lượt hiện ra</th><th class="r">Số truy vấn</th></tr></thead><tbody>`;
+    dsC.forEach(c=>{
+      h+=`<tr><td><b>${esc(c.k)}</b></td><td class="r"><b>${fi(c.c)}</b></td>
+        <td class="r">${clickT?fp(c.c/clickT,1):'—'}</td><td class="r">${fi(c.i)}</td>
+        <td class="r">${fi(c.n)}</td></tr>`;
+    });
+    h+=`</tbody></table></div>`;
+
+    /* --- top trang --- */
+    const pp=M.selPage? M.selPage.rows.map(r=>({u:String(r.url||'').replace(/^https?:\/\/[^/]+/,'')||'/',
+        c:toInt(r.clicks)||0, i:toInt(r.impressions)||0, pos:toFloat(r.position), lt:r.loai_trang||'blog'}))
+        .filter(r=>r.c>0).sort((a,b)=>b.c-a.c).slice(0,15) : [];
+    h+=`<h3 style="font-size:14px;margin:18px 0 8px">Trang nhận nhiều lượt bấm nhất</h3>`;
+    if(!pp.length){ h+=`<div class="card">${empty('Chưa có dữ liệu trang trong kỳ này','')}</div>`; }
+    else{
+      h+=`<div class="tw"><table><thead><tr><th>Tiêu đề</th><th>Đường dẫn</th><th>Loại</th>
+        <th class="r">Lượt bấm</th><th class="r">Lượt hiện ra</th><th class="r">Vị trí</th></tr></thead><tbody>`;
+      pp.forEach(r=>{
+        h+=`<tr><td class="tt2"><b>${esc(titleCua(r.u))}</b></td>
+          <td class="mono tt">${esc(r.u)}</td><td>${pageBadge(r.lt)}</td>
+          <td class="r"><b>${fi(r.c)}</b></td><td class="r">${fi(r.i)}</td><td class="r">${f1(r.pos)}</td></tr>`;
+      });
+      h+=`</tbody></table></div>`;
+      h+=`<div class="cap">Kỳ trang: ${esc(pLabel(M.selPage))}. Bảng ý định và chủ đề gộp cả tháng ${esc(thangNay||'')}.</div>`;
+    }
+    h+=`</div>`;
   }
-  if(late.length){
-    h+=`<div style="margin-top:12px">${note('warn','⏱',
-      `<b>Khối dữ liệu chưa được cập nhật:</b> ${late.map(l=>esc(l.khoi)+(l.songay!=null?` (${l.songay} ngày)`:' (chưa có lần nào)')).join(' · ')}.
-       Xem chi tiết ở tab <b>Vấn đề & nhật ký</b>.`)}</div>`;
+
+  /* ============ 4 · AI TRÍCH DẪN ============ */
+  {
+    const tot=M.aiTotal||0;
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">4 · Uy tín & AI</span>
+        <h2>Các công cụ AI có nhắc tới Timona không</h2>
+        <span class="src">${M.aiDate?`lấy ${dvn(M.aiDate)}`:'—'} · ${srcLink('AI_RESPONSES')}</span></div>`;
+    if(!tot){ h+=`<div class="card">${empty('Chưa có dữ liệu AI','')}</div></div>`; }
+    else{
+      const top=M.ai[0];
+      h+=`<div class="g4" style="margin-bottom:12px">
+        ${kpi({lab:'Tổng lượt AI trích dẫn', val:fi(tot), cls:'k-up', sub:`${M.ai.length} nền tảng`})}
+        ${kpi({lab:'Nền tảng dẫn đầu', val:fi(top.res), sub:esc(top.nen||top.nt||'')})}
+        ${kpi({lab:'Domain Rating', val:fi(ah.dr), sub:`UR ${fi(ah.ur)} · ${fi(ah.bl)} backlink`})}
+        ${kpi({lab:'Tên miền trỏ về', val:fi(ah.rd), sub:`tổng mọi thời kỳ ${fi(ah.rdAll)}`})}
+      </div>
+      <div class="tw"><table><thead><tr><th>Nền tảng</th><th class="r">Lượt trích dẫn</th>
+        <th class="r">Số trang được dẫn</th><th class="r">Tỷ trọng</th><th>Trạng thái</th></tr></thead><tbody>`;
+      M.ai.forEach(r=>{
+        h+=`<tr><td><b>${esc(r.nen||r.nt||'—')}</b></td><td class="r"><b>${fi(r.res)}</b></td>
+          <td class="r">${fi(r.pages)}</td><td class="r">${fp(r.res/tot,1)}</td>
+          <td>${/paus/i.test(r.tt||'')?'<span class="bd bd-lo">tạm dừng</span>':'<span class="bd bd-ok">đang chạy</span>'}</td></tr>`;
+      });
+      h+=`</tbody></table></div></div>`;
+    }
   }
-  h+=`</div>`;
+
+  /* ============ 5 · BỘ TỪ KHOÁ THEO CHỦ ĐỀ ============ */
+  {
+    const bt=new Map();
+    M.kw.forEach(k=>{ const c=k.chu_de||'—';
+      if(!bt.has(c)) bt.set(c,{c,n:0,click:0,impr:0,nRank:0,top10:0});
+      const t=bt.get(c); t.n++; t.click+=(k.viClicks||0); t.impr+=(k.viImpr||0);
+      if(k.vi!=null){ t.nRank++; if(k.vi<=10) t.top10++; } });
+    const ds=[...bt.values()].sort((a,b)=>b.click-a.click).slice(0,12);
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">5 · Bộ từ khoá</span>
+        <h2>Từ khoá đang theo dõi mang về bao nhiêu</h2>
+        <span class="src">${fi(M.kw.length)} từ khoá · kỳ ${esc(pLabel(M.selRank))} · ${srcLink('KEYWORD_RANK_WEEKLY')}</span></div>
+      <div class="tw"><table><thead><tr><th>Chủ đề</th><th class="r">Số từ khoá</th>
+        <th class="r">Lượt bấm</th><th class="r">Lượt hiện ra</th><th class="r">Tỷ lệ bấm</th>
+        <th class="r">Có thứ hạng</th><th class="r">Top 10</th></tr></thead><tbody>`;
+    ds.forEach(t=>{
+      h+=`<tr><td><b>${esc(t.c)}</b></td><td class="r">${fi(t.n)}</td>
+        <td class="r"><b>${fi(t.click)}</b></td><td class="r">${fi(t.impr)}</td>
+        <td class="r">${t.impr?fp(t.click/t.impr,2):'—'}</td>
+        <td class="r">${fi(t.nRank)}</td><td class="r">${fi(t.top10)}</td></tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+  }
+
+  /* ============ 6 · TỪ KHOÁ TOP 10 ============ */
+  {
+    const sCo = M.coSerp ? M.serp.filter(r=>r.vi!=null) : [];
+    const sTop3=sCo.filter(r=>r.vi<=3).length, sTop10=sCo.filter(r=>r.vi<=10).length;
+    const sTop20=sCo.filter(r=>r.vi<=20).length;
+    const gCo=M.kw.filter(k=>k.vi!=null);
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">6 · Thứ hạng</span>
+        <h2>Bao nhiêu từ khoá đang nằm Top 10</h2>
+        <span class="src">${M.coSerp?`quét ngày ${dvn(M.serpMoc)} · ${fi(M.serpTong)} từ khoá`:'chưa có dữ liệu quét'} · ${srcLink('KEYWORD_RANK_SERP')}</span></div>
+      <div class="g4" style="margin-bottom:12px">
+        ${kpi({lab:'Top 3', val:M.coSerp?fi(sTop3):'—', cls:'k-up', sub:M.coSerp?`${fp(sTop3/M.serpTong,1)} bộ đã quét`:''})}
+        ${kpi({lab:'Top 10', val:M.coSerp?fi(sTop10):'—', cls:'k-up', sub:M.coSerp?`${fp(sTop10/M.serpTong,1)} bộ đã quét`:''})}
+        ${kpi({lab:'Top 20', val:M.coSerp?fi(sTop20):'—', sub:M.coSerp?`${fp(sTop20/M.serpTong,1)} bộ đã quét`:''})}
+        ${kpi({lab:'Không thấy trong Top 100', val:M.coSerp?fi(M.serpTong-sCo.length):'—', cls:'k-warn',
+               sub:M.coSerp?`${fp((M.serpTong-sCo.length)/M.serpTong,1)} bộ đã quét`:''})}
+      </div>
+      <div class="cap">Số quét trực tiếp trên Google, máy tính. Search Console cùng kỳ ghi nhận
+        ${fi(gCo.filter(k=>k.vi<=3).length)} từ khoá Top 3 và ${fi(gCo.filter(k=>k.vi<=10).length)} từ khoá Top 10 —
+        thấp hơn vì đó là vị trí trung bình cả kỳ, không phải thứ hạng một ngày.</div>
+    </div>`;
+  }
+
+  /* ============ 7 · TRUY VẤN THEO THÁNG ============ */
+  {
+    const QM=qmData();
+    const ths=QM.thangs.slice(-6);
+    const g=new Map();
+    QM.rows.forEach(r=>{
+      if(ths.indexOf(r.thang)<0) return;
+      if(!g.has(r.q)) g.set(r.q,{q:r.q, cd:r.cd, yd:r.yd, tong:0, th:{}});
+      const o=g.get(r.q); o.tong+=r.c; o.th[r.thang]=(o.th[r.thang]||0)+r.c;
+    });
+    const ds=[...g.values()].sort((a,b)=>b.tong-a.tong).slice(0,25);
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">7 · Truy vấn</span>
+        <h2>Câu tìm kiếm mang về nhiều lượt bấm nhất</h2>
+        <span class="src">${ths.length} tháng gần nhất · ${srcLink('GSC_QUERY_MONTHLY')}</span></div>
+      <div class="tw"><table><thead><tr><th>Truy vấn</th><th>Chủ đề</th>
+        ${ths.map(t=>`<th class="r">${esc(t.slice(2).replace('-','/'))}</th>`).join('')}
+        <th class="r">Tổng</th></tr></thead><tbody>`;
+    ds.forEach(r=>{
+      h+=`<tr><td class="tt"><b>${esc(r.q)}</b></td><td style="font-size:11.5px">${esc(r.cd)}</td>
+        ${ths.map(t=>`<td class="r">${r.th[t]?fi(r.th[t]):'<span style="color:var(--faint)">·</span>'}</td>`).join('')}
+        <td class="r"><b>${fi(r.tong)}</b></td></tr>`;
+    });
+    h+=`</tbody></table></div>
+      <div class="cap">Google chỉ trả về tối đa 1.000 truy vấn mỗi tháng nên bảng này là phần đỉnh, không phải toàn bộ.</div>
+    </div>`;
+  }
 
   return h;
+}
+
+/* Tra tiêu đề bài từ PAGE_META theo đường dẫn đã chuẩn hoá. */
+function titleCua(u){
+  if(!M._meta){
+    M._meta=new Map();
+    (D.PAGE_META||[]).forEach(r=>{
+      const k=String(r.url||r.slug||'').replace(/^https?:\/\/[^/]+/,'').replace(/[?#].*$/,'');
+      const k2='/'+k.replace(/^\/+|\/+$/g,'')+'/';
+      if(r.tieu_de) M._meta.set(k2, r.tieu_de);
+    });
+  }
+  const k='/'+String(u||'').replace(/[?#].*$/,'').replace(/^\/+|\/+$/g,'')+'/';
+  return M._meta.get(k) || (k==='//' ? 'Trang chủ' : '—');
 }
 const MUC_DO={cao:'Cao', trung_binh:'Trung bình', thap:'Thấp'};
 const NHOM_LOI={'404':'URL hỏng', du_lieu_keyword:'Dữ liệu từ khoá', noi_dung:'Nội dung',
@@ -1155,7 +1303,7 @@ function khoiGA4(){
         <div>${o('Người dùng', fi(k0.users), `${dUsr.html} so kỳ trước`)}</div>
       </div>
 
-      ${M.ga4Drop!=null ? `<div style="margin-top:14px">${note('info','✓',
+      ${M.ga4Drop!=null ? `<div style="margin-top:14px">${noteOff('info','✓',
         `<b>Analytics xác nhận mức giảm là thật.</b> Đây là hệ thống đo hoàn toàn độc lập với Search Console —
          một bên Google đếm ở phía họ, một bên đếm bằng thẻ đo đặt trên web. Hai bên vẫn ra gần như cùng con số:
          phiên tìm kiếm tự nhiên giảm <b>${nf1.format(Math.abs(M.ga4Drop*100))}%</b> từ ${esc(M.ga4DinhThang)} đến ${esc(M.ga4NayThang)},
@@ -1313,7 +1461,7 @@ function tab1(){
       <td style="font-size:12px;color:var(--muted)">${esc(m.ghi_chu)}</td></tr>`;
   });
   h+=`</tbody></table></div>
-    ${M.months.some(m=>m.partial)?`<div style="margin-top:10px">${note('warn','⚠︎',
+    ${M.months.some(m=>m.partial)?`<div style="margin-top:10px">${noteOff('warn','⚠︎',
       `<b>Tháng khuyết ngày không đem so ngang.</b> ${M.months.filter(m=>m.partial).map(m=>`${esc(m.thang)} chỉ có ${m.days}/${m.dim} ngày`).join(' · ')}.
        So một tháng thiếu ngày với tháng đủ ngày sẽ ra kết luận sai về xu hướng.`)}</div>`:''}
   </div>`;
@@ -1727,7 +1875,7 @@ function tab2(){
   })).sort((a,b)=>b.c-a.c).slice(0,20);
   h+=`<div class="sec"><div class="sec-h"><h3>20 truy vấn mang nhiều click nhất</h3>
       <span class="src">${pLabel(M.selQuery)} · ${srcLink('GSC_QUERY')}</span></div>`;
-  if(isSample(M.selQuery)) h+=`<div class="mb">${note('mut','ℹ︎',`Kỳ đang chọn chỉ là <b>mẫu ${M.selQuery.n} dòng</b> chép tay từ bản export gốc, không phải bảng đầy đủ.`)}</div>`;
+  if(isSample(M.selQuery)) h+=`<div class="mb">${noteOff('mut','ℹ︎',`Kỳ đang chọn chỉ là <b>mẫu ${M.selQuery.n} dòng</b> chép tay từ bản export gốc, không phải bảng đầy đủ.`)}</div>`;
   h+=`<div class="tw"><table><thead><tr><th>#</th><th>Truy vấn</th><th>Phân loại</th>
       <th class="r">Click</th><th class="r">Hiển thị</th><th class="r">CTR</th><th class="r">Vị trí</th></tr></thead><tbody>`;
   qs.forEach((q,i)=>{
@@ -1816,7 +1964,7 @@ function tab3(){
   h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Câu hỏi của anh Hiếu</span>
       <h2>Traffic này có ra tiền không?</h2>
       <span class="src">${pLabel(M.selPage)} · ${srcLink('GSC_PAGE')}</span></div>`;
-  if(isSample(M.selPage)) h+=`<div class="mb">${note('warn','⚠︎',
+  if(isSample(M.selPage)) h+=`<div class="mb">${noteOff('warn','⚠︎',
     `Kỳ đang chọn chỉ là <b>mẫu ${M.selPage.n} dòng top</b> chép từ bản export gốc — <b>không đủ để tính tỷ lệ %</b>.
      Hãy chọn một kỳ tuần đầy đủ ở ô bên dưới.`)}</div>`;
 
@@ -1937,7 +2085,7 @@ function tab3(){
     <div class="cap">Cột lượt tìm/tháng ở bảng này là <b>ước lượng của công cụ nghiên cứu từ khoá</b>, không phải số đo.
       Đây là chỗ duy nhất trong dashboard còn dùng số ước lượng — vì trang đã hỏng thì không còn lượt bấm thật nào để đếm,
       nên chỉ có thể ước chừng đang mất bao nhiêu.</div>
-    ${note('warn','⚠︎', `<b>Không kiểm tra được 404 tự động.</b> Website đang bật tường lửa chặn bot (lỗi IS-018):
+    ${noteOff('warn','⚠︎', `<b>Không kiểm tra được 404 tự động.</b> Website đang bật tường lửa chặn bot (lỗi IS-018):
       mọi URL gọi từ máy chủ đều trả về mã 200 kèm trang chờ, kể cả URL không tồn tại.
       Vì vậy ${fi(M.kw.filter(k=>k.ttUrl==='chua_kiem_tra').length)} từ khoá còn để trạng thái “chưa kiểm tra” —
       phải kiểm bằng Screaming Frog hoặc trình duyệt thật.`)}
@@ -2000,13 +2148,13 @@ function tab4(){
   h+=`<div class="sec"><div class="sec-h"><h3>22 điểm khác biệt — trạng thái hiển thị</h3>
       <span class="src">${freshness('usp checklist')} · ${srcLink('USP_CHECKLIST')}</span></div>`;
   if(chua===M.usp.length){
-    h+=`<div class="mb">${note('warn','⚠︎',
+    h+=`<div class="mb">${noteOff('warn','⚠︎',
       `<b>Chưa chấm lần nào.</b> Cột “có trên web” của cả ${M.usp.length} điểm đang trống, nên chưa thể nói AI có đọc được điểm nào.
        Việc chấm ước ~45 phút/tháng, làm ở tab <b>USP_CHECKLIST</b> và ghi bằng chứng vào <b>USP_CHECK_LOG</b>.
        Trước khi chấm cần chốt xong nội dung điểm 22 và xử lý rủi ro pháp lý bên dưới.`)}</div>`;
   }
   if(rui.length){
-    h+=`<div class="mb">${note('down','§',
+    h+=`<div class="mb">${noteOff('down','§',
       `<b>${rui.length} điểm có rủi ro pháp lý, chưa được xử lý.</b>
        ${rui.map(u=>`Điểm ${esc(u.id)} (${esc(u.nhom)})`).join(' · ')} — dùng các cụm “duy nhất”, “hàng đầu”, “số 1”.
        Khoản 11 Điều 8 Luật Quảng cáo 2012 cấm dùng những từ này khi không có tài liệu hợp pháp chứng minh.
