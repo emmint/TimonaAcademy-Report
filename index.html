@@ -302,6 +302,9 @@ const TABS = [
   {id:6,n:'6',t:'Truy vấn & Ý định'},
   {id:5,n:'5',t:'Vấn đề & nhật ký'}
 ];
+/* Báo cáo chỉ hiển thị 6 tháng gần nhất. Chuỗi dài hơn làm cột biểu đồ mỏng
+   và bảng dài, sếp phải cuộn mới đọc được. Dữ liệu cũ vẫn nằm nguyên trong Sheet. */
+const SO_THANG = 6;
 const CO = {navy:'#0F3F76', blue:'#2483C5', blueL:'#5BA6DC', up:'#12805C', down:'#C0392B', warn:'#B7791F', line:'#E1E7EF', muted:'#5F6B7A', faint:'#8A94A2'};
 const D = {};              // dữ liệu thô theo tab
 const S = {tab:0, loadedAt:null, err:[]};   // trạng thái
@@ -1119,6 +1122,24 @@ function tab0(){
     const kyT = M.coLead ? M.lead.filter(l=>String(l.ngay||'').slice(0,7)===pm) : [];
     const qForm = ky.filter(l=>l.url).length;
     const dL = delta(ky.length, kyT.length||null, 'up');
+
+    /* Tỷ lệ chuyển đổi: mẫu số là phiên GA4 của ĐÚNG khoảng ngày mà tháng đó có dữ liệu khách.
+       Nếu dòng khách chỉ ghi tới ngày 15 thì mẫu số cũng chỉ lấy tới ngày 15 — chia cho cả
+       tháng sẽ ra tỷ lệ thấp giả. */
+    const ngayCuoiCua = t => {
+      const ds=(M.lead||[]).filter(l=>String(l.ngay).length===10 && l.ngay.slice(0,7)===t).map(l=>+l.ngay.slice(8,10));
+      return ds.length? Math.max(...ds) : null;
+    };
+    const phienCua = (t,d) => {
+      const seg=(M.ga4||[]).filter(r=>r.ngay.slice(0,7)===t && (d==null || +r.ngay.slice(8,10)<=d));
+      return {se:seg.reduce((a,b)=>a+(b.ses||0),0), n:seg.length};
+    };
+    const dN=ngayCuoiCua(thang), dP=ngayCuoiCua(pm);
+    const gN=phienCua(thang,dN), gP=phienCua(pm,dP);
+    const cr  = gN.se? ky.length/gN.se : null;
+    const crP = gP.se? kyT.length/gP.se : null;
+    const dCR = delta(cr, crP, 'up');
+
     h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">1 · Ra tiền</span>
         <h2>Khách để lại thông tin</h2>
         <span class="src">tháng ${esc(thang)} · ${srcLink('LEAD')}</span></div>`;
@@ -1129,34 +1150,35 @@ function tab0(){
     }else{
       const gT=new Map(); ky.forEach(l=>{ if(l.url) gT.set(l.url,(gT.get(l.url)||0)+1); });
       const dsT=[...gT.entries()].sort((a,b)=>b[1]-a[1]);
-      const gN=new Map(); ky.forEach(l=>{ const n=l.nguon||'không rõ'; gN.set(n,(gN.get(n)||0)+1); });
       h+=`<div class="grid g4" style="margin-bottom:14px">
-        ${kpi({lab:'Tổng khách trong tháng', val:fi(ky.length), cls:'k-up',
-               sub: kyT.length? `${dL.html} so tháng ${esc(pm)}` : `chưa có số tháng ${esc(pm)} để so`})}
+        ${kpi({lab:'Tổng khách trong tháng', val:fi(ky.length), cls:dL.dir<0?'k-down':'k-up',
+               sub: kyT.length? `${dL.html} so tháng ${esc(pm)} (${fi(kyT.length)} khách)` : `chưa có số tháng ${esc(pm)} để so`})}
         ${kpi({lab:'Điền form trên website', val:fi(qForm), sub:`${fp(qForm/ky.length,1)} tổng số khách`})}
         ${kpi({lab:'Gọi hotline', val:fi(ky.length-qForm), sub:`${fp((ky.length-qForm)/ky.length,1)} · không qua website`})}
-        ${kpi({lab:'Số nguồn ghi nhận được', val:fi(gN.size), sub:[...gN.entries()].sort((a,b)=>b[1]-a[1]).slice(0,2).map(([k,v])=>`${esc(k)} ${fi(v)}`).join(' · ')})}
+        ${kpi({lab:'Tỷ lệ ra khách', val: cr==null?'—':fp(cr,2), cls: cr==null?'':(dCR.dir<0?'k-down':'k-up'),
+               sub: cr==null? 'chưa có số phiên để tính'
+                    : `${fi(ky.length)} khách trên ${fi(gN.se)} phiên${crP!=null?` · ${dCR.html} so tháng trước`:''}`})}
       </div>`;
       if(dsT.length){
-        h+=`<div class="grid g2">
-          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Trang khách điền form</h4>
-            ${hbarChart({items:dsT.slice(0,8).map(([u,c])=>({k:(t=>t.length>26?t.slice(0,25)+'…':t)(titleCua(u)), v:c})),
-                         lw:200, w:620, mr:46, color:CO.up})}
-          </div>
-          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Nguồn khách</h4>
-            ${hbarChart({items:[...gN.entries()].sort((a,b)=>b[1]-a[1]).map(([k,v])=>({k, v})),
-                         lw:130, w:560, mr:46, color:CO.blue})}
-          </div>
-        </div>`;
+        h+=`<div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Trang khách điền form</h4>
+            ${hbarChart({items:dsT.slice(0,10).map(([u,c])=>({k:(t=>t.length>40?t.slice(0,39)+'…':t)(titleCua(u)==='—'?u:titleCua(u)), v:c})),
+                         lw:300, w:1000, mr:52, color:CO.up})}
+          </div>`;
       }
-      h+=`</div>`;
+      h+=`<div class="cap">Tỷ lệ ra khách chia cho phiên truy cập Analytics của đúng khoảng ngày có dữ liệu khách:
+        tháng ${esc(thang)} lấy ${dN?`01 → ${dN}`:'cả tháng'} (${fi(gN.n)} ngày)${
+        kyT.length? `, tháng ${esc(pm)} lấy ${dP?`01 → ${dP}`:'cả tháng'} (${fi(gP.n)} ngày)` : ''}.
+        ${dN&&dP&&dN!==dP? `<b>Hai kỳ lệch ${Math.abs(dN-dP)} ngày nên chỉ so được tương đối.</b>`:''}
+        ${dN==null? `<b>Dòng khách tháng ${esc(thang)} chỉ ghi tháng, không ghi ngày</b> — không cắt được về đúng
+          cửa sổ của Analytics, nên tử số có thể gồm cả những ngày nằm ngoài mẫu số. Ghi ngày đầy đủ vào cột
+          <span class="mono">ngay</span> là hết lệch.`:''}</div></div>`;
     }
   }
 
   /* ============ 2 · LƯU LƯỢNG TOÀN WEB ============ */
   {
     const ch=(D.GA4_CHANNEL||[]).map(r=>({th:r.thang, ng:r.nguon||'—', se:toInt(r.sessions)||0, us:toInt(r.users)||0})).filter(r=>r.th);
-    const ths=[...new Set(ch.map(r=>r.th))].sort();
+    const ths=[...new Set(ch.map(r=>r.th))].sort().slice(-SO_THANG);
     const c=catMTD(M.ga4, K.ga4Cuoi);
     const S1=a=>({se:a.reduce((x,y)=>x+(y.ses||0),0), us:a.reduce((x,y)=>x+(y.users||0),0), or:a.reduce((x,y)=>x+(y.org||0),0)});
     h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">2 · Lưu lượng</span>
@@ -1180,8 +1202,9 @@ function tab0(){
       </div>`;
 
       /* biểu đồ chuỗi tháng: cột = tổng phiên, đường = tỷ trọng tự nhiên */
+      const gth=new Set(ths);
       const tong={}, org={};
-      ch.forEach(r=>{ tong[r.th]=(tong[r.th]||0)+r.se; if(/organic search/i.test(r.ng)) org[r.th]=(org[r.th]||0)+r.se; });
+      ch.filter(r=>gth.has(r.th)).forEach(r=>{ tong[r.th]=(tong[r.th]||0)+r.se; if(/organic search/i.test(r.ng)) org[r.th]=(org[r.th]||0)+r.se; });
       const cuoi=ths[ths.length-1];
       h+=`<div class="card card-p" style="margin-bottom:14px">
         <h4 style="font-size:13px;margin-bottom:6px">Phiên truy cập theo tháng · ${ths.length} tháng</h4>
@@ -1201,7 +1224,7 @@ function tab0(){
       /* cơ cấu kênh theo tháng */
       const KENH=['Organic Search','Organic Social','Direct','Referral','AI Assistant','Khác'];
       const MAUK=[CO.navy, CO.blue, CO.blueL, '#9CC8E8', CO.warn, CO.faint];
-      const rowsK=ch.map(r=>({thang:r.th, kenh:KENH.find(k=>bd(k)===bd(r.ng))||'Khác', c:r.se}));
+      const rowsK=ch.filter(r=>gth.has(r.th)).map(r=>({thang:r.th, kenh:KENH.find(k=>bd(k)===bd(r.ng))||'Khác', c:r.se}));
       h+=`<div class="grid g21">
         <div class="card card-p"><h4 style="font-size:13px;margin-bottom:6px">Cơ cấu kênh theo tháng</h4>
           ${cotXepThang(ths, rowsK, 'kenh', KENH, MAUK)}
@@ -1243,7 +1266,7 @@ function tab0(){
       </div>`;
 
       /* chuỗi tháng: cột click, đường vị trí (đảo trục) */
-      const ms=M.months||[];
+      const ms=(M.months||[]).slice(-SO_THANG);
       if(ms.length){
         h+=`<div class="card card-p" style="margin-bottom:14px">
           <h4 style="font-size:13px;margin-bottom:6px">Lượt bấm và vị trí trung bình theo tháng · ${ms.length} tháng</h4>
@@ -1685,7 +1708,7 @@ function tab1(){
     <div class="tw"><table><thead><tr>
       ${th('Tháng','s')}${th('Click','n','r')}${th('Hiển thị','n','r')}${th('CTR','n','r')}${th('Vị trí TB','n','r')}
       <th class="r">Ngày có dữ liệu</th><th>Ghi chú</th></tr></thead><tbody>`;
-  [...M.months].reverse().forEach(m=>{
+  [...M.months].slice(-SO_THANG).reverse().forEach(m=>{
     h+=`<tr${m.partial?' style="background:#FDFBF4"':''}>
       <td data-v="${m.thang}"><b>${esc(m.thang)}</b>${m.partial?' <span class="bd bd-md">khuyết</span>':''}</td>
       <td class="r" data-v="${m.clicks}">${fi(m.clicks)}</td>
@@ -1726,7 +1749,8 @@ function tab1(){
   const ch=(D.GA4_CHANNEL||[]).map(r=>({th:r.thang, ng:r.nguon||'—',
       se:toInt(r.sessions)||0, us:toInt(r.users)||0})).filter(r=>r.th);
   if(ch.length){
-    const ths=[...new Set(ch.map(r=>r.th))].sort();
+    const ths=[...new Set(ch.map(r=>r.th))].sort().slice(-SO_THANG);
+    const gthKe=new Set(ths);
     /* KHÔNG so tháng đầu với tháng cuối một cách máy móc: hai tháng rìa thường
        khuyết ngày (2025-04 có 19/30 ngày, 2026-08 có 11/31), so ngang sẽ thổi
        phồng mức giảm. Chỉ so giữa hai tháng ĐỦ NGÀY, lấy theo cờ partial của GSC_MONTHLY. */
@@ -1736,15 +1760,15 @@ function tab1(){
     const tCuoi= thsDu.length? thsDu[thsDu.length-1] : ths[ths.length-1];
     const dayDu = thsDu.length>=2;
     const gKe=new Map();
-    ch.forEach(r=>{ if(!gKe.has(r.ng)) gKe.set(r.ng,{ng:r.ng,se:0,us:0,dau:0,cuoi:0});
+    ch.filter(r=>gthKe.has(r.th)).forEach(r=>{ if(!gKe.has(r.ng)) gKe.set(r.ng,{ng:r.ng,se:0,us:0,dau:0,cuoi:0});
       const o=gKe.get(r.ng); o.se+=r.se; o.us+=r.us;
       if(r.th===tDau) o.dau+=r.se;
       if(r.th===tCuoi) o.cuoi+=r.se; });
     const rowsKe=[...gKe.values()].sort((a,b)=>b.se-a.se);
     const totKe=rowsKe.reduce((a,r)=>a+r.se,0);
     h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Câu 2</span><h3>Traffic đến từ nguồn nào</h3>
-        <span class="src">GA4 · toàn kỳ ${esc(ths[0])} → ${esc(ths[ths.length-1])} · ${srcLink('GA4_CHANNEL')}</span></div>
-      <div class="tw"><table><thead><tr>${th('Nguồn','s')}${th('Phiên toàn kỳ','n','r')}${th('% phiên','n','r')}
+        <span class="src">GA4 · ${ths.length} tháng gần nhất: ${esc(ths[0])} → ${esc(ths[ths.length-1])} · ${srcLink('GA4_CHANNEL')}</span></div>
+      <div class="tw"><table><thead><tr>${th('Nguồn','s')}${th('Phiên '+ths.length+' tháng','n','r')}${th('% phiên','n','r')}
         ${th('Người dùng','n','r')}<th class="r">${esc(tDau)}</th><th class="r">${esc(tCuoi)}</th>
         <th class="r">Thay đổi</th></tr></thead><tbody>`;
     rowsKe.forEach(r=>{
@@ -1767,7 +1791,7 @@ function tab1(){
         mọi kênh còn lại gộp lại <b>${nf1.format(dKhac*100)}%</b>.
         Nếu thương hiệu yếu đi nói chung thì mọi kênh sẽ cùng rơi đều — ở đây không phải vậy.
         <br><span style="opacity:.85">Hai mốc so sánh đều là tháng <b>đủ ngày</b>${dayDu?'':' — CẢNH BÁO: không tìm được đủ hai tháng đủ ngày, số dưới đây có thể lệch'}.
-        Hai cột tháng chỉ là mốc so sánh; cột “Phiên toàn kỳ” mới là tổng ${esc(ths[0])}–${esc(ths[ths.length-1])}.</span>`);
+        Hai cột tháng chỉ là mốc so sánh; cột phiên gộp mới là tổng ${esc(ths[0])}–${esc(ths[ths.length-1])}.</span>`);
     }
     h+=`</div>`;
   }else{
@@ -1911,7 +1935,7 @@ function tab2(){
 
     if(qTong){
       h+=`<div class="sec"><div class="sec-h"><h3>Truy vấn và từ khoá là hai thứ khác nhau</h3>
-          <span class="src">gộp toàn bộ ${QM.thangs.length} tháng · ${srcLink('GSC_QUERY_MONTHLY')} đối chiếu ${srcLink('KEYWORD_MASTER')}</span></div>
+          <span class="src">gộp ${QM.thangs.length} tháng gần nhất · ${srcLink('GSC_QUERY_MONTHLY')} đối chiếu ${srcLink('KEYWORD_MASTER')}</span></div>
         <div class="tw"><table><thead><tr>
           <th>Đang nói về cái gì</th><th class="r">Số lượng</th><th class="r">Click</th><th>Nguồn số</th>
         </tr></thead><tbody>
@@ -2594,7 +2618,7 @@ function qmData(){
   const rowsRaw = D.GSC_QUERY_MONTHLY||[];
   const lCd = layLuat('chu_de_query'), lYd = layLuat('y_dinh_query');
   const cCd = new Map(), cYd = new Map();
-  const rows = rowsRaw.map(r=>{
+  let rows = rowsRaw.map(r=>{
     const q=r.query||'';
     return { thang:r.thang, q,
       c:toInt(r.clicks)||0, i:toInt(r.impressions)||0, pos:toFloat(r.position),
@@ -2602,7 +2626,12 @@ function qmData(){
       yd: lYd.length? (phanLoai(q,lYd,cYd).gan||'—') : '—' };
   }).filter(r=>r.thang);
 
-  const thangs=[...new Set(rows.map(r=>r.thang))].sort();
+  let thangs=[...new Set(rows.map(r=>r.thang))].sort();
+  /* Cắt ngay tại nguồn: mọi bảng và biểu đồ đọc qmData() đều tự giới hạn theo,
+     không phải nhớ cắt ở từng chỗ hiển thị. */
+  thangs = thangs.slice(-SO_THANG);
+  const giu = new Set(thangs);
+  rows = rows.filter(r=>giu.has(r.thang));
   /* đối chiếu với tổng click thật của GSC_MONTHLY để biết Google giấu bao nhiêu */
   const thatTheo={}; (M.months||[]).forEach(m=>thatTheo[m.thang]=m.clicks);
   const phu = thangs.map(t=>{
@@ -2717,7 +2746,7 @@ function tab6(){
   const chuaPl = Q.rows.filter(r=>String(r.cd).indexOf('chưa phân loại')>-1).reduce((a,r)=>a+r.c,0);
 
   h+=`<div class="grid g4">
-    ${kpi({lab:'Click thật toàn kỳ', val:fi(tongThat), sub:`Search Console, ${Q.thangs.length} tháng`})}
+    ${kpi({lab:`Click thật ${Q.thangs.length} tháng`, val:fi(tongThat), sub:`Search Console · ${esc(Q.thangs[0]||'')} → ${esc(Q.thangs[Q.thangs.length-1]||'')}`})}
     ${kpi({lab:'Click bảng truy vấn giải thích được', val:fi(tongBang), sub:`bằng <b>${fp(tyPhu,1)}</b> click thật`})}
     ${kpi({lab:'Google ẩn danh', val:fp(tyPhu==null?null:1-tyPhu,1), sub:'không biết đến từ truy vấn nào', cls:'k-warn'})}
     ${kpi({lab:'Bộ luật phủ được',
