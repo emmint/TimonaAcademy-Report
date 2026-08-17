@@ -1223,7 +1223,7 @@ function tab0(){
         ${kpi({lab:'Tổng khách trong tháng', val:fi(ky.length), cls:dL.dir<0?'k-down':'k-up',
                sub: kyT.length? `${dL.html} so tháng ${esc(pm)} (${fi(kyT.length)} khách)` : `chưa có số tháng ${esc(pm)} để so`})}
         ${kpi({lab:'Điền form trên website', val:fi(qForm), sub:`${fp(qForm/ky.length,1)} tổng số khách`})}
-        ${kpi({lab:'Gọi hotline', val:fi(ky.length-qForm), sub:`${fp((ky.length-qForm)/ky.length,1)} · không qua website`})}
+        ${kpi({lab:'Gọi hotline', val:fi(ky.length-qForm), sub:`${fp((ky.length-qForm)/ky.length,1)} · hotline website`})}
         ${kpi({lab:'Tỷ lệ ra khách', val: cr==null?'—':fp(cr,2), cls: cr==null?'':(dCR.dir<0?'k-down':'k-up'),
                sub: cr==null? 'chưa có số phiên để tính'
                     : `${fi(ky.length)} khách trên ${fi(gN.se)} phiên${crP!=null?` · ${dCR.html} so tháng trước`:''}`})}
