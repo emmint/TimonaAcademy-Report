@@ -1634,25 +1634,28 @@ function tab0(){
       const dTy = (KP.tyTB!=null && KP.tyTBTruoc!=null)? delta(KP.tyTB, KP.tyTBTruoc, 'up') : null;
       /* Nguồn có tỷ lệ nhận diện thì đọc theo tỷ lệ; nguồn nhập tay đúng/sai thì đọc theo đếm. */
       if(KP.tyTB!=null){
-        h+=`<div class="grid g4" style="margin-bottom:14px">
+        /* Hai ô "điểm mạnh yếu nhất" và "nền tảng kém nhất" đã GỠ 17/08/2026:
+           hai biểu đồ ngay bên dưới đã nói đủ, để thêm ô số chỉ lặp lại. */
+        h+=`<div class="grid g2" style="margin-bottom:14px">
           ${kpi({lab:'AI nói đúng về Timona', val:f1(KP.tyTB)+'%', cls:'k-up',
                  sub: dTy? `${dTy.html} so kỳ ${esc(KP.kyTruoc)}` : `trung bình qua ${fi(KP.soDong)} lượt kiểm điểm mạnh trên các công cụ AI`})}
           ${kpi({lab:'Điểm mạnh AI nắm chắc', val:`${fi(KP.dung)}<small> / ${fi(KP.daKiem)}</small>`,
                  sub: KP.daKiem? `${fp(KP.dung/KP.daKiem,1)} số điểm được AI nói đúng từ 95% số lần hỏi trở lên` : ''})}
-          ${kpi({lab:'Điểm mạnh AI ít biết nhất', val: KP.yeu.length? f1(KP.yeu[0].ty)+'%' : '—', cls:'k-warn',
-                 sub: KP.yeu.length? `AI nói đúng điểm “${esc(String(KP.yeu[0].nd||KP.yeu[0].id).slice(0,40))}” ít nhất — đây là chỗ cần bổ sung nội dung trước` : ''})}
-          ${kpi({lab:'AI hiểu Timona kém nhất',
-                 val: KP.theoNen.length? f1(KP.theoNen[KP.theoNen.length-1].ty)+'%' : '—',
-                 sub: KP.theoNen.length? `${esc(KP.theoNen[KP.theoNen.length-1].nen)} biết ít về Timona nhất trong ${fi(KP.theoNen.length)} công cụ AI đã kiểm` : ''})}
         </div>
         <div class="grid g2" style="margin-bottom:14px">
           <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Công cụ AI nào hiểu Timona rõ nhất</h4>
             ${hbarChart({items:KP.theoNen.map(o=>({k:o.nen.length>20?o.nen.slice(0,19)+'…':o.nen, v:Math.round(o.ty), t:f1(o.ty)+'%'})),
                          lw:150, w:560, mr:52})}
           </div>
-          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">10 điểm mạnh AI còn nói sót nhiều nhất</h4>
-            ${hbarChart({items:KP.yeu.slice(0,10).map(o=>({k:(t=>t.length>30?t.slice(0,29)+'…':t)(String(o.nd||o.id)), v:Math.round(o.ty), t:f1(o.ty)+'%',
-                         c: o.ty>=95?CO.up : (o.ty>=85?CO.blue:CO.warn)})), lw:230, w:700, mr:52})}
+          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Cả ${fi(KP.yeu.length)} điểm mạnh, xếp từ nói sót nhiều nhất</h4>
+            <div style="max-height:296px;overflow-y:auto;padding-right:4px">
+              ${hbarChart({items:KP.yeu.map(o=>({k:(t=>t.length>30?t.slice(0,29)+'…':t)(String(o.nd||o.id)), v:Math.round(o.ty), t:f1(o.ty)+'%',
+                           c: o.ty>=95?CO.up : (o.ty>=85?CO.blue:CO.warn)})), lw:230, w:700, mr:52, rowH:29})}
+            </div>
+            <div class="cap">Hiện 10 dòng đầu, cuộn xuống để xem hết.
+              <span style="color:${CO.warn}">■</span> dưới 85% ·
+              <span style="color:${CO.blue}">■</span> 85–94% ·
+              <span style="color:${CO.up}">■</span> từ 95%</div>
           </div>
         </div>`;
       }else{
@@ -1678,8 +1681,10 @@ function tab0(){
               <td style="font-size:11.5px">${esc(x.ghi||'')}</td></tr>`).join('')
           + `</tbody></table></div>`;
       };
-      h+= bang(KP.dsSai, 'AI đang nói sai — ưu tiên sửa', '#FBEAE8')
-        + bang(KP.dsKhong.slice(0,10), 'AI chưa từng nhắc tới', '');
+      /* Bảng "AI chưa từng nhắc tới" đã GỠ 17/08/2026: với nguồn có tỷ lệ nhận diện,
+         không điểm nào thật sự bằng 0 nên bảng chỉ liệt kê mã USP trống nghĩa.
+         Bảng "AI đang nói sai" vẫn giữ vì đó là thứ phải xử ngay. */
+      h+= bang(KP.dsSai, 'AI đang nói sai — ưu tiên sửa', '#FBEAE8');
       h+=`<div class="cap">${KP.nguoi? `Nguồn: <b>${esc(KP.nguoi)}</b>, kỳ ${esc(KP.ky)}. ` : ''}
         Một điểm mạnh kiểm trên nhiều nền tảng thì lấy trạng thái xấu nhất:
         hễ có một nơi nói sai là tính sai, không để nơi nói đúng che mất. Mẫu số là toàn bộ
