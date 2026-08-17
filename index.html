@@ -957,6 +957,72 @@ function prep(){
     } else M.aiTopic=null;
   }
 
+  /* --- Key points: AI nói đúng bao nhiêu điểm mạnh của Timona --- */
+  {
+    const log=(D.USP_CHECK_LOG||[]).map(r=>({
+      ky:String(r.ky||'').trim(), id:String(r.usp_id||'').trim(),
+      nen:(r.nen_tang||'').trim(), kq:bd(r.ket_qua||''),
+      /* Nguồn nhập tay chỉ có đúng/sai; nguồn báo cáo ngoài có tỷ lệ nhận diện.
+         Giữ nguyên tỷ lệ thay vì ép về ba nhãn — ép sẽ mất thông tin, mà 85%
+         không phải "không nhắc" cũng không phải "nhắc đủ". */
+      ty:toFloat(r.ty_le_nhan_dien),
+      nd:(r.noi_dung_kiem||'').trim(),
+      url:r.bang_chung_url||'', nguoi:(r.nguoi_kiem_tra||'').trim(), ghi:r.ghi_chu||''
+    })).filter(r=>r.id && r.ky);
+
+    if(log.length){
+      const kys=[...new Set(log.map(r=>r.ky))].sort();
+      const kyNay=kys[kys.length-1], kyTruoc=kys.length>1? kys[kys.length-2] : null;
+
+      /* Một điểm mạnh có thể được kiểm trên nhiều nền tảng. Gộp về một trạng thái:
+         hễ có nền tảng nào nói SAI thì tính là sai — đó là thứ phải sửa gấp, không được
+         để một nền tảng nói đúng che mất. Không sai thì đúng nếu ít nhất một nơi nhắc đúng. */
+      const gop=(ky)=>{
+        const m=new Map();
+        log.filter(r=>r.ky===ky).forEach(r=>{
+          const cu=m.get(r.id);
+          const uu = r.kq.indexOf('sai')>-1 ? 3 : (r.kq.indexOf('dung')>-1 ? 2 : 1);
+          if(!cu || uu>cu.uu) m.set(r.id,{id:r.id, uu, kq:r.kq, nen:r.nen, url:r.url, ghi:r.ghi});
+        });
+        const v=[...m.values()];
+        /* Tỷ lệ trung bình tính trên MỌI dòng, không gộp về từng điểm — mỗi lần kiểm
+           trên một nền tảng là một quan sát độc lập. */
+        const dong=log.filter(r=>r.ky===ky && r.ty!=null);
+        const tyTB = dong.length? dong.reduce((a,b)=>a+b.ty,0)/dong.length : null;
+        return {n:v.length, sai:v.filter(x=>x.uu===3), dung:v.filter(x=>x.uu===2),
+                khong:v.filter(x=>x.uu===1), map:m, tyTB, soDong:dong.length,
+                theoNen:(()=>{ const g=new Map();
+                  dong.forEach(r=>{ if(!g.has(r.nen)) g.set(r.nen,{nen:r.nen,t:0,n:0});
+                    const o=g.get(r.nen); o.t+=r.ty; o.n++; });
+                  return [...g.values()].map(o=>({nen:o.nen, ty:o.t/o.n})).sort((a,b)=>b.ty-a.ty); })(),
+                yeu:(()=>{ const g=new Map();
+                  dong.forEach(r=>{ const k=r.id;
+                    if(!g.has(k)) g.set(k,{id:k, nd:r.nd, t:0, n:0});
+                    const o=g.get(k); o.t+=r.ty; o.n++; });
+                  return [...g.values()].map(o=>({...o, ty:o.t/o.n})).sort((a,b)=>a.ty-b.ty); })()};
+      };
+      const A=gop(kyNay), B=kyTruoc? gop(kyTruoc) : null;
+      const tongUsp=(M.usp||[]).length;
+      const tenUsp=new Map((M.usp||[]).map(u=>[String(u.id).trim(), u]));
+
+      M.keyPoint={
+        ky:kyNay, kyTruoc,
+        tongUsp,
+        daKiem:A.n,
+        chuaKiem: Math.max(0, tongUsp - A.n),
+        dung:A.dung.length, khong:A.khong.length, sai:A.sai.length,
+        tyDung: tongUsp? A.dung.length/tongUsp : null,
+        tyDungTruoc: (B && tongUsp)? B.dung.length/tongUsp : null,
+        dsSai: A.sai.map(x=>({...x, u:tenUsp.get(x.id)})),
+        dsKhong: A.khong.map(x=>({...x, u:tenUsp.get(x.id)})),
+        tyTB:A.tyTB, tyTBTruoc:B? B.tyTB : null, soDong:A.soDong,
+        theoNen:A.theoNen, yeu:A.yeu,
+        nguoi:[...new Set(log.filter(r=>r.ky===kyNay).map(r=>r.nguoi).filter(Boolean))].join(', '),
+        nenTang:[...new Set(log.filter(r=>r.ky===kyNay).map(r=>r.nen).filter(Boolean))].join(', ')
+      };
+    } else M.keyPoint=null;
+  }
+
   M.aiRank = D.AI_RANK_LOG||[];
   M.uspLog = D.USP_CHECK_LOG||[];
 }
@@ -1551,14 +1617,74 @@ function tab0(){
         Cộng thô toàn bộ lượt hỏi thì ra ${fp(AT.tyTho,1)}.</div></div>`;
     }
 
-    /* ---- Key points thương hiệu: chưa có nguồn ---- */
-    const soUsp=(M.usp||[]).length, soLog=(M.uspLog||[]).length;
-    if(!soLog){
-      h+=`<div style="margin-top:12px">${note('warn','⚠︎',
-        `<b>Chỉ số điểm mạnh được AI nhận diện đúng chưa có nguồn.</b> Hỏi thẳng về Timona thì AI chắc chắn
-         nhắc tên, nên thứ cần đo là <b>AI nói đúng và đủ bao nhiêu điểm mạnh</b> trong ${fi(soUsp)} điểm ở
-         <span class="mono">USP_CHECKLIST</span>. Tab <span class="mono">USP_CHECK_LOG</span> hiện có
-         ${fi(soLog)} dòng.`)}</div>`;
+    /* ---- 4c · Key points: AI nói đúng bao nhiêu điểm mạnh ---- */
+    const KP=M.keyPoint;
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">4c · Điểm mạnh</span>
+        <h2>AI nói đúng bao nhiêu điểm mạnh của Timona</h2>
+        <span class="src">${KP?`kỳ ${esc(KP.ky)} · ${srcLink('USP_CHECK_LOG')}`:'chưa có dữ liệu kiểm'}</span></div>`;
+    if(!KP){
+      h+=`<div class="card">${empty('Chưa có dữ liệu kiểm điểm mạnh',
+        `Hỏi thẳng về Timona thì AI chắc chắn nhắc tên, nên thứ cần đo là <b>AI nói đúng và đủ bao nhiêu
+         điểm mạnh</b> trong ${fi((M.usp||[]).length)} điểm ở <span class="mono">USP_CHECKLIST</span>.
+         <br><br>Điền vào tab <span class="mono">USP_CHECK_LOG</span>, cột
+         <span class="mono">ket_qua</span> nhận ba giá trị: <span class="mono">dung</span> ·
+         <span class="mono">khong_nhac</span> · <span class="mono">sai</span>.`)}</div></div>`;
+    }else{
+      const dKP = KP.tyDungTruoc!=null? delta(KP.tyDung, KP.tyDungTruoc, 'up') : null;
+      const dTy = (KP.tyTB!=null && KP.tyTBTruoc!=null)? delta(KP.tyTB, KP.tyTBTruoc, 'up') : null;
+      /* Nguồn có tỷ lệ nhận diện thì đọc theo tỷ lệ; nguồn nhập tay đúng/sai thì đọc theo đếm. */
+      if(KP.tyTB!=null){
+        h+=`<div class="grid g4" style="margin-bottom:14px">
+          ${kpi({lab:'Tỷ lệ nhận diện trung bình', val:f1(KP.tyTB)+'%', cls:'k-up',
+                 sub: dTy? `${dTy.html} so kỳ ${esc(KP.kyTruoc)}` : `${fi(KP.soDong)} lượt kiểm`})}
+          ${kpi({lab:'Điểm mạnh đạt từ 95%', val:`${fi(KP.dung)}<small> / ${fi(KP.daKiem)}</small>`,
+                 sub: KP.daKiem? `${fp(KP.dung/KP.daKiem,1)} số điểm đã kiểm` : ''})}
+          ${kpi({lab:'Điểm mạnh yếu nhất', val: KP.yeu.length? f1(KP.yeu[0].ty)+'%' : '—', cls:'k-warn',
+                 sub: KP.yeu.length? esc(String(KP.yeu[0].nd||KP.yeu[0].id).slice(0,44)) : ''})}
+          ${kpi({lab:'Nền tảng nhận diện kém nhất',
+                 val: KP.theoNen.length? f1(KP.theoNen[KP.theoNen.length-1].ty)+'%' : '—',
+                 sub: KP.theoNen.length? esc(KP.theoNen[KP.theoNen.length-1].nen) : ''})}
+        </div>
+        <div class="grid g2" style="margin-bottom:14px">
+          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Theo nền tảng AI</h4>
+            ${hbarChart({items:KP.theoNen.map(o=>({k:o.nen.length>20?o.nen.slice(0,19)+'…':o.nen, v:Math.round(o.ty), t:f1(o.ty)+'%'})),
+                         lw:150, w:560, mr:52})}
+          </div>
+          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">10 điểm mạnh AI nhận diện yếu nhất</h4>
+            ${hbarChart({items:KP.yeu.slice(0,10).map(o=>({k:(t=>t.length>30?t.slice(0,29)+'…':t)(String(o.nd||o.id)), v:Math.round(o.ty), t:f1(o.ty)+'%',
+                         c: o.ty>=95?CO.up : (o.ty>=85?CO.blue:CO.warn)})), lw:230, w:700, mr:52})}
+          </div>
+        </div>`;
+      }else{
+        h+=`<div class="grid g4" style="margin-bottom:14px">
+          ${kpi({lab:'Điểm mạnh AI nói đúng', val:`${fi(KP.dung)}<small> / ${fi(KP.tongUsp)}</small>`, cls:'k-up',
+                 sub: dKP? `${fp(KP.tyDung,1)} · ${dKP.html} so kỳ ${esc(KP.kyTruoc)}` : fp(KP.tyDung,1)})}
+          ${kpi({lab:'AI không nhắc tới', val:fi(KP.khong), cls:'k-warn',
+                 sub: KP.tongUsp? `${fp(KP.khong/KP.tongUsp,1)} bộ điểm mạnh` : ''})}
+          ${kpi({lab:'AI nói SAI', val:fi(KP.sai), cls: KP.sai? 'k-down':'',
+                 sub: KP.sai? 'phải sửa nội dung trên web' : 'không có điểm nào bị nói sai'})}
+          ${kpi({lab:'Chưa kiểm', val:fi(KP.chuaKiem),
+                 sub: KP.nenTang? `đã kiểm trên ${esc(KP.nenTang)}` : ''})}
+        </div>`;
+      }
+      const bang=(ds,tieu,cls)=>{
+        if(!ds.length) return '';
+        return `<h4 style="font-size:13px;margin:14px 0 8px">${tieu}</h4>
+          <div class="tw"><table><thead><tr><th>Điểm mạnh</th><th>Nhóm</th><th>Nền tảng</th><th>Ghi chú</th></tr></thead><tbody>`
+          + ds.map(x=>`<tr${cls?` style="background:${cls}"`:''}>
+              <td class="tt2"><b>${esc(x.u? String(x.u.nd).slice(0,90)+(String(x.u.nd).length>90?'…':'') : 'USP '+x.id)}</b></td>
+              <td style="font-size:11.5px">${esc(x.u? x.u.nhom : '—')}</td>
+              <td style="font-size:11.5px">${esc(x.nen||'—')}</td>
+              <td style="font-size:11.5px">${esc(x.ghi||'')}</td></tr>`).join('')
+          + `</tbody></table></div>`;
+      };
+      h+= bang(KP.dsSai, 'AI đang nói sai — ưu tiên sửa', '#FBEAE8')
+        + bang(KP.dsKhong.slice(0,10), 'AI chưa từng nhắc tới', '');
+      h+=`<div class="cap">${KP.nguoi? `Nguồn: <b>${esc(KP.nguoi)}</b>, kỳ ${esc(KP.ky)}. ` : ''}
+        Một điểm mạnh kiểm trên nhiều nền tảng thì lấy trạng thái xấu nhất:
+        hễ có một nơi nói sai là tính sai, không để nơi nói đúng che mất. Mẫu số là toàn bộ
+        ${fi(KP.tongUsp)} điểm trong <span class="mono">USP_CHECKLIST</span>, kể cả điểm chưa kiểm —
+        chưa kiểm cũng là chưa chứng minh được AI biết.</div></div>`;
     }
   }
 
