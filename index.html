@@ -1075,7 +1075,9 @@ function khungTG(){
   return M._khung;
 }
 
-/* Băng phạm vi thời gian — đặt đầu tab, nói thẳng khối nào đọc khung nào. */
+/* Băng phạm vi thời gian đã GỠ ngày 17/08/2026 theo yêu cầu của Linh.
+   Không xoá hàm — mỗi khối vẫn tự ghi khung ngày của mình ở dòng nguồn và ghi chú.
+   Muốn bật lại thì đổi dòng `let h='';` trong tab0() thành `let h=bangPhamVi();`. */
 function bangPhamVi(){
   const K=khungTG();
   const qm=qmData();
@@ -1089,19 +1091,10 @@ function bangPhamVi(){
     <div class="para-h" style="margin-bottom:12px"><div class="lead">
       <span class="eyebrow">Phạm vi thời gian</span>
       <h2>Mỗi khối đọc một khung ngày khác nhau</h2>
-      <p>Các nguồn chốt số lệch ngày nhau. Khung dùng cho từng khối ghi ngay dưới đây;
-         chỉ số trong cùng một khối luôn cùng khung, so được với nhau.</p>
     </div></div>
     <div style="display:flex;gap:26px;flex-wrap:wrap">
       ${o('Chỉ số Google', K.gscCuoi? `01 → ${dvn(K.gscCuoi).slice(0,5)}` : '—', 'so cùng số ngày tháng trước')}
       ${o('Chỉ số Analytics', K.ga4Cuoi? `01 → ${dvn(K.ga4Cuoi).slice(0,5)}` : '—', 'so cùng số ngày tháng trước')}
-      ${(()=>{ const kq=thangQM? khoangQM(thangQM) : null;
-        return o('Phân bổ ý định · chủ đề', thangQM? `tháng ${esc(thangQM)}` : '—',
-          kq? (kq.du? `đủ ${kq.so} ngày` : `mới ${kq.so}/${kq.dim} ngày, chỉ đọc tỷ trọng`) : 'nguồn chỉ có mức tháng'); })()}
-      ${(()=>{ const khuyet=new Set((M.months||[]).filter(m=>m.partial).map(m=>m.thang));
-        const du=qm.thangs.filter(t=>!khuyet.has(t));
-        const t=du.length? du[du.length-1] : null;
-        return o('Chỉ số truy vấn', t? `tháng ${esc(t)}` : '—', 'tháng đủ ngày gần nhất, so được kỳ'); })()}
       ${o('Bảng trang', K.kyTrang? `${dvn(K.kyTrang.tu).slice(0,5)} → ${dvn(K.kyTrang.den).slice(0,5)}` : '—',
           K.kyTrang? `${fi(K.kyTrang.n)} dòng · ${K.kyTrang.days} ngày` : '')}
       ${o('Thứ hạng', K.serpMoc? dvn(K.serpMoc) : '—', 'quét trực tiếp, máy tính')}
@@ -1111,7 +1104,7 @@ function bangPhamVi(){
 
 function tab0(){
   const K=khungTG();
-  let h=bangPhamVi();
+  let h='';
 
   /* ============ 1 · RA TIỀN ============ */
   {
