@@ -1387,12 +1387,15 @@ function tab0(){
       h+=`<div class="grid g2" style="margin-bottom:14px">
         <div class="card card-p">
           ${(()=>{
-            /* Ý định đọc cùng nguồn với biểu đồ chủ đề bên cạnh: bảng trang theo tháng.
-               Trước đây khối này đọc bảng truy vấn — nguồn đó bị Google cắt còn 1.000 dòng
-               nên chỉ giải thích khoảng 14% lượt click, không so ngang với biểu đồ chủ đề được. */
-            const YT=trangTheoThang('y_dinh_query','4. Kiến thức chuyên môn','1. Thương hiệu');
-            if(YT) return `<h4 style="font-size:13px;margin-bottom:6px">Phân loại traffic từ Google theo ý định</h4>
-              ${cotXepThang(YT.thangs, YT.rows, 'k', YD, MAUY)}
+            /* Ý định đọc từ BẢNG TRUY VẤN, không đọc từ trang.
+               Chốt 17/08/2026: ý định là thuộc tính của câu người ta gõ, suy từ tiêu đề trang
+               thì một trang chỉ mang được một nhãn nên sai bản chất. Đổi lại chỉ đọc được
+               phần Google cho xem (tối đa 1.000 truy vấn/tháng) — độ phủ ghi thẳng bên dưới.
+               Biểu đồ chủ đề bên cạnh vẫn dùng nguồn trang vì chủ đề gắn với nội dung bài. */
+            const m=(M.months||[]).find(x=>x.thang===thangQM);
+            const phu = m && m.clicks ? clickT/m.clicks : null;
+            return `<h4 style="font-size:13px;margin-bottom:6px">Phân loại truy vấn theo ý định</h4>
+              ${cotXepThang(QM.thangs, QM.rows, 'yd', YD, MAUY)}
               <div class="legend">${YD.map((k,i)=>`<span><i style="background:${MAUY[i]}"></i>${esc(k)}</span>`).join('')}</div>
               <div class="cap" style="line-height:1.7">
                 <b>1 · Thương hiệu</b> — đã biết Timona, gõ thẳng tên hoặc địa chỉ cơ sở để tìm.<br>
@@ -1401,19 +1404,18 @@ function tab0(){
                 <b>3 · Cân nhắc · so sánh</b> — đang chọn chỗ hoặc chọn nghề: học ở đâu, chỗ nào uy tín,
                   top mấy, review, nên học nghề gì, lương bao nhiêu, học bao lâu.<br>
                 <b>4 · Kiến thức chuyên môn</b> — hỏi kiến thức nghề, chưa nhắc gì tới chuyện đi học.
-                  Đây là nhóm mặc định: không khớp ba nhóm trên thì rơi vào đây.
+                  Đây là nhóm mặc định: không khớp ba nhóm trên thì rơi vào đây.<br>
+                <span style="display:inline-block;margin-top:6px">Phân loại theo <b>câu người ta gõ vào Google</b>,
+                khác biểu đồ bên cạnh (phân loại theo trang). Google chỉ trả tối đa 1.000 truy vấn mỗi tháng
+                nên khối này đọc được ${fi(clickT)} lượt click${phu!=null?`, bằng ${fp(phu,0)} tổng`:''} —
+                tỷ trọng giữa bốn nhóm đáng tin, số tuyệt đối thấp hơn thực tế.</span>
               </div>`;
-            return `<h4 style="font-size:13px;margin-bottom:6px">Ý định người tìm theo tháng</h4>
-              ${cotXepThang(QM.thangs, QM.rows, 'yd', YD, MAUY)}
-              <div class="legend">${YD.map((k,i)=>`<span><i style="background:${MAUY[i]}"></i>${esc(k)}</span>`).join('')}</div>
-              <div class="cap">Đang đọc bảng truy vấn vì chưa có <span class="mono">GSC_PAGE_MONTHLY</span> —
-                nguồn đó bị Google cắt còn 1.000 dòng mỗi tháng nên chỉ giải thích một phần lượt click.</div>`;
           })()}
         </div>
         <div class="card card-p">
           ${(()=>{
-            /* Ưu tiên bảng trang theo tháng để khớp khung với bốn ô chỉ số phía trên.
-               Chưa có tab đó thì lùi về kỳ tuần và nói rõ là khung khác. */
+            /* Chủ đề đọc nguồn TRANG: chủ đề gắn với nội dung bài, một bài chỉ thuộc một mảng
+               nghề nên suy từ tiêu đề là đúng bản chất, lại phủ được gần hết lượt click. */
             const pmRows=(D.GSC_PAGE_MONTHLY||[]).filter(r=>String(r.thang||'').slice(0,7)===c.th);
             const dungThang = pmRows.length>0;
             const CT = dungThang ? chuDeTheoTrang({rows:pmRows, tu:c.th+'-01', den:K.gscCuoi, thang:c.th})
@@ -1424,11 +1426,9 @@ function tab0(){
             const nhan = dungThang ? `01 → ${dvn(K.gscCuoi).slice(0,5)}`
                                    : `${dvn(CT.ky.tu).slice(0,5)} → ${dvn(CT.ky.den).slice(0,5)}`;
             return `<h4 style="font-size:13px;margin-bottom:4px">Phân loại traffic từ Google theo chủ đề · ${nhan} · ${fi(CT.tongC)} lượt click</h4>
-              <div class="cap" style="margin:0 0 8px">Phân loại theo tiêu đề trang, không theo câu tìm kiếm${
+              <div class="cap" style="margin:0 0 8px">Phân loại theo tiêu đề trang${
                 (()=>{ if(!ngayGSC) return '';
                   const t=CT.tongC/ngayGSC;
-                  /* Google cộng theo trang và cộng theo ngày lệch nhau vài lượt do cách quy
-                     lượt click về trang đích — chênh dưới 3% là bình thường, không phải lỗi. */
                   return t>=0.97 ? ` — khớp gần đúng tổng ${fi(ngayGSC)} lượt click cùng kỳ`
                                  : ` — phủ ${fp(t,0)} tổng lượt click cùng kỳ`; })()}.${
                 dungThang? '' : ` <b>Khung của biểu đồ này là ${CT.ky.days} ngày, khác bốn ô chỉ số phía trên (${c.d} ngày)</b> — tab
