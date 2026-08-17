@@ -1160,10 +1160,27 @@ function tab0(){
                     : `${fi(ky.length)} khách trên ${fi(gN.se)} phiên${crP!=null?` · ${dCR.html} so tháng trước`:''}`})}
       </div>`;
       if(dsT.length){
-        h+=`<div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Trang khách điền form</h4>
-            ${hbarChart({items:dsT.slice(0,10).map(([u,c])=>({k:(t=>t.length>40?t.slice(0,39)+'…':t)(titleCua(u)==='—'?u:titleCua(u)), v:c})),
-                         lw:300, w:1000, mr:52, color:CO.up})}
-          </div>`;
+        /* Bảng thay biểu đồ: biểu đồ cột ngang chỉ vẽ được một kỳ, không so được. */
+        const gTT=new Map(); kyT.forEach(l=>{ if(l.url) gTT.set(l.url,(gTT.get(l.url)||0)+1); });
+        const moiTrang=[...new Set([...gT.keys(), ...gTT.keys()])]
+          .map(u=>({u, nay:gT.get(u)||0, truoc:gTT.get(u)||0}))
+          .sort((a,b)=> b.nay-a.nay || b.truoc-a.truoc);
+        h+=`<div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Đường dẫn</th>
+          <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
+        moiTrang.forEach(r=>{
+          const t=titleCua(r.u);
+          const ch = r.truoc? delta(r.nay, r.truoc, 'up').html
+                   : (r.nay? '<span class="bd bd-ok">trang mới</span>' : '');
+          h+=`<tr><td class="tt2"><b>${esc(t==='—'? r.u : t)}</b></td>
+            <td class="mono tt">${esc(r.u)}</td>
+            <td class="r"><b>${r.nay?fi(r.nay):'<span style="color:var(--faint)">·</span>'}</b></td>
+            <td class="r">${r.truoc?fi(r.truoc):'<span style="color:var(--faint)">·</span>'}</td>
+            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td></tr>`;
+        });
+        h+=`<tr style="background:#F7FBFF"><td><b>Tổng điền form</b></td><td></td>
+          <td class="r"><b>${fi(qForm)}</b></td><td class="r"><b>${fi(kyT.filter(l=>l.url).length)}</b></td>
+          <td class="r">${kyT.filter(l=>l.url).length? delta(qForm, kyT.filter(l=>l.url).length,'up').html : ''}</td></tr>`;
+        h+=`</tbody></table></div>`;
       }
       h+=`<div class="cap">Tỷ lệ ra khách chia cho phiên truy cập Analytics của đúng khoảng ngày có dữ liệu khách:
         tháng ${esc(thang)} lấy ${dN?`01 → ${dN}`:'cả tháng'} (${fi(gN.n)} ngày)${
