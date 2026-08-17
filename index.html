@@ -1635,22 +1635,22 @@ function tab0(){
       /* Nguồn có tỷ lệ nhận diện thì đọc theo tỷ lệ; nguồn nhập tay đúng/sai thì đọc theo đếm. */
       if(KP.tyTB!=null){
         h+=`<div class="grid g4" style="margin-bottom:14px">
-          ${kpi({lab:'Tỷ lệ nhận diện trung bình', val:f1(KP.tyTB)+'%', cls:'k-up',
-                 sub: dTy? `${dTy.html} so kỳ ${esc(KP.kyTruoc)}` : `${fi(KP.soDong)} lượt kiểm`})}
-          ${kpi({lab:'Điểm mạnh đạt từ 95%', val:`${fi(KP.dung)}<small> / ${fi(KP.daKiem)}</small>`,
-                 sub: KP.daKiem? `${fp(KP.dung/KP.daKiem,1)} số điểm đã kiểm` : ''})}
-          ${kpi({lab:'Điểm mạnh yếu nhất', val: KP.yeu.length? f1(KP.yeu[0].ty)+'%' : '—', cls:'k-warn',
-                 sub: KP.yeu.length? esc(String(KP.yeu[0].nd||KP.yeu[0].id).slice(0,44)) : ''})}
-          ${kpi({lab:'Nền tảng nhận diện kém nhất',
+          ${kpi({lab:'AI nói đúng về Timona', val:f1(KP.tyTB)+'%', cls:'k-up',
+                 sub: dTy? `${dTy.html} so kỳ ${esc(KP.kyTruoc)}` : `trung bình qua ${fi(KP.soDong)} lượt kiểm điểm mạnh trên các công cụ AI`})}
+          ${kpi({lab:'Điểm mạnh AI nắm chắc', val:`${fi(KP.dung)}<small> / ${fi(KP.daKiem)}</small>`,
+                 sub: KP.daKiem? `${fp(KP.dung/KP.daKiem,1)} số điểm được AI nói đúng từ 95% số lần hỏi trở lên` : ''})}
+          ${kpi({lab:'Điểm mạnh AI ít biết nhất', val: KP.yeu.length? f1(KP.yeu[0].ty)+'%' : '—', cls:'k-warn',
+                 sub: KP.yeu.length? `AI nói đúng điểm “${esc(String(KP.yeu[0].nd||KP.yeu[0].id).slice(0,40))}” ít nhất — đây là chỗ cần bổ sung nội dung trước` : ''})}
+          ${kpi({lab:'AI hiểu Timona kém nhất',
                  val: KP.theoNen.length? f1(KP.theoNen[KP.theoNen.length-1].ty)+'%' : '—',
-                 sub: KP.theoNen.length? esc(KP.theoNen[KP.theoNen.length-1].nen) : ''})}
+                 sub: KP.theoNen.length? `${esc(KP.theoNen[KP.theoNen.length-1].nen)} biết ít về Timona nhất trong ${fi(KP.theoNen.length)} công cụ AI đã kiểm` : ''})}
         </div>
         <div class="grid g2" style="margin-bottom:14px">
-          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Theo nền tảng AI</h4>
+          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">Công cụ AI nào hiểu Timona rõ nhất</h4>
             ${hbarChart({items:KP.theoNen.map(o=>({k:o.nen.length>20?o.nen.slice(0,19)+'…':o.nen, v:Math.round(o.ty), t:f1(o.ty)+'%'})),
                          lw:150, w:560, mr:52})}
           </div>
-          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">10 điểm mạnh AI nhận diện yếu nhất</h4>
+          <div class="card card-p"><h4 style="font-size:13px;margin-bottom:10px">10 điểm mạnh AI còn nói sót nhiều nhất</h4>
             ${hbarChart({items:KP.yeu.slice(0,10).map(o=>({k:(t=>t.length>30?t.slice(0,29)+'…':t)(String(o.nd||o.id)), v:Math.round(o.ty), t:f1(o.ty)+'%',
                          c: o.ty>=95?CO.up : (o.ty>=85?CO.blue:CO.warn)})), lw:230, w:700, mr:52})}
           </div>
