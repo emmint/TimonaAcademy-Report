@@ -292,7 +292,7 @@ const GID = {
   /* Đo độ phủ AI theo chủ đề: bộ 80 câu hỏi cố định + nhật ký quét hằng tuần.
      Điền GID sau khi tạo tab là khối "AI nhắc Timona theo chủ đề" tự hiện. */
   AI_TOPIC_QUESTIONS:'', AI_TOPIC_LOG:'',
-  /* Lượt bấm theo trang, gộp theo tháng. Có tab này thì biểu đồ chủ đề dùng chung
+  /* Lượt click theo trang, gộp theo tháng. Có tab này thì biểu đồ chủ đề dùng chung
      khung tháng với bốn ô chỉ số, hết cảnh một bên 14 ngày một bên 7 ngày. */
   GSC_PAGE_MONTHLY:''
 };
@@ -1236,7 +1236,7 @@ function tab0(){
           .sort((a,b)=> b.nay-a.nay || b.truoc-a.truoc);
         /* Hai cột "Lượt xem trang" và "Tỷ lệ ra khách" đã GỠ 17/08/2026 theo yêu cầu của Linh.
            Muốn bật lại thì cần tab GA4_PAGE (lượt xem từng trang) làm mẫu số — không dùng
-           lượt bấm Search Console thay thế được, vì khách điền form đến từ mọi nguồn. */
+           lượt click Search Console thay thế được, vì khách điền form đến từ mọi nguồn. */
         h+=`<div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Đường dẫn</th>
           <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
         moiTrang.forEach(r=>{
@@ -1351,10 +1351,10 @@ function tab0(){
       const dCl=delta(a.cl,co?b.cl:null,'up'), dIm=delta(a.im,co?b.im:null,'up');
       const dCt=delta(ctrA,co?ctrB:null,'up'), dPo=delta(a.pos,co?b.pos:null,'down');
       h+=`<div class="grid g4" style="margin-bottom:14px">
-        ${kpi({lab:'Lượt bấm', val:fi(a.cl), cls:dCl.dir<0?'k-down':'k-up',
+        ${kpi({lab:'Lượt click', val:fi(a.cl), cls:dCl.dir<0?'k-down':'k-up',
                sub:`${dCl.html} so ${c.d} ngày đầu tháng ${esc(c.pm)}`})}
         ${kpi({lab:'Lượt hiện ra', val:fi(a.im), cls:dIm.dir<0?'k-down':'', sub:`${dIm.html} so cùng kỳ`})}
-        ${kpi({lab:'Tỷ lệ bấm', val:ctrA==null?'—':fp(ctrA,2), cls:dCt.dir<0?'k-down':'', sub:`${dCt.html} so cùng kỳ`})}
+        ${kpi({lab:'Tỷ lệ click', val:ctrA==null?'—':fp(ctrA,2), cls:dCt.dir<0?'k-down':'', sub:`${dCt.html} so cùng kỳ`})}
         ${kpi({lab:'Vị trí trung bình', val:f1(a.pos), cls:dPo.dir<0?'k-down':'', sub:`${dPo.html} so cùng kỳ · càng nhỏ càng tốt`})}
       </div>`;
 
@@ -1362,15 +1362,15 @@ function tab0(){
       const ms=(M.months||[]).slice(-SO_THANG);
       if(ms.length){
         h+=`<div class="card card-p" style="margin-bottom:14px">
-          <h4 style="font-size:13px;margin-bottom:6px">Lượt bấm và vị trí trung bình theo tháng · ${ms.length} tháng</h4>
+          <h4 style="font-size:13px;margin-bottom:6px">Lượt click và vị trí trung bình theo tháng · ${ms.length} tháng</h4>
           ${comboChart({
             labels: ms.map(m=>m.thang.slice(2)),
             bars  : ms.map(m=>m.clicks||0),
             barOpacity: ms.map(m=>m.partial?0.5:1),
             line  : {data: ms.map(m=>m.pos), color:CO.warn, invert:true, fmt:v=>nf1.format(v)},
-            w:1000, h:250, maxLabels:17, aria:'lượt bấm và vị trí theo tháng'
+            w:1000, h:250, maxLabels:17, aria:'lượt click và vị trí theo tháng'
           })}
-          <div class="cap">Cột: lượt bấm. Đường: vị trí trung bình, trục đảo chiều nên đường đi lên là thứ hạng tốt lên.
+          <div class="cap">Cột: lượt click. Đường: vị trí trung bình, trục đảo chiều nên đường đi lên là thứ hạng tốt lên.
             Cột mờ là tháng chưa đủ ngày.</div>
         </div>`;
       }
@@ -1389,19 +1389,25 @@ function tab0(){
           ${(()=>{
             /* Ý định đọc cùng nguồn với biểu đồ chủ đề bên cạnh: bảng trang theo tháng.
                Trước đây khối này đọc bảng truy vấn — nguồn đó bị Google cắt còn 1.000 dòng
-               nên chỉ giải thích khoảng 14% lượt bấm, không so ngang với biểu đồ chủ đề được. */
+               nên chỉ giải thích khoảng 14% lượt click, không so ngang với biểu đồ chủ đề được. */
             const YT=trangTheoThang('y_dinh_query','4. Kiến thức chuyên môn','1. Thương hiệu');
             if(YT) return `<h4 style="font-size:13px;margin-bottom:6px">Phân loại traffic từ Google theo ý định</h4>
               ${cotXepThang(YT.thangs, YT.rows, 'k', YD, MAUY)}
               <div class="legend">${YD.map((k,i)=>`<span><i style="background:${MAUY[i]}"></i>${esc(k)}</span>`).join('')}</div>
-              <div class="cap">Tỷ trọng lượt bấm, phân loại theo tiêu đề trang — cùng nguồn với biểu đồ chủ đề
-                bên cạnh. Luật ở tab <span class="mono">CLASSIFY_RULES</span>, nhóm 4 là phần không khớp ba nhóm trên.
-                Trang chủ xếp vào nhóm Thương hiệu vì phần lớn lượt bấm vào đó đến từ người gõ thẳng tên Timona.</div>`;
+              <div class="cap" style="line-height:1.7">
+                <b>1 · Thương hiệu</b> — đã biết Timona, gõ thẳng tên hoặc địa chỉ cơ sở để tìm.<br>
+                <b>2 · Sẵn sàng đăng ký</b> — hỏi tiền và thủ tục: học phí, đăng ký, tuyển sinh, khai giảng,
+                  “khoá học X bao nhiêu tiền”. Gần đóng học phí nhất.<br>
+                <b>3 · Cân nhắc · so sánh</b> — đang chọn chỗ hoặc chọn nghề: học ở đâu, chỗ nào uy tín,
+                  top mấy, review, nên học nghề gì, lương bao nhiêu, học bao lâu.<br>
+                <b>4 · Kiến thức chuyên môn</b> — hỏi kiến thức nghề, chưa nhắc gì tới chuyện đi học.
+                  Đây là nhóm mặc định: không khớp ba nhóm trên thì rơi vào đây.
+              </div>`;
             return `<h4 style="font-size:13px;margin-bottom:6px">Ý định người tìm theo tháng</h4>
               ${cotXepThang(QM.thangs, QM.rows, 'yd', YD, MAUY)}
               <div class="legend">${YD.map((k,i)=>`<span><i style="background:${MAUY[i]}"></i>${esc(k)}</span>`).join('')}</div>
               <div class="cap">Đang đọc bảng truy vấn vì chưa có <span class="mono">GSC_PAGE_MONTHLY</span> —
-                nguồn đó bị Google cắt còn 1.000 dòng mỗi tháng nên chỉ giải thích một phần lượt bấm.</div>`;
+                nguồn đó bị Google cắt còn 1.000 dòng mỗi tháng nên chỉ giải thích một phần lượt click.</div>`;
           })()}
         </div>
         <div class="card card-p">
@@ -1417,14 +1423,14 @@ function tab0(){
               : (M.daily||[]).filter(d=>d.ngay>=CT.ky.tu && d.ngay<=CT.ky.den).reduce((x,b)=>x+b.clicks,0);
             const nhan = dungThang ? `01 → ${dvn(K.gscCuoi).slice(0,5)}`
                                    : `${dvn(CT.ky.tu).slice(0,5)} → ${dvn(CT.ky.den).slice(0,5)}`;
-            return `<h4 style="font-size:13px;margin-bottom:4px">Phân loại traffic từ Google theo chủ đề · ${nhan} · ${fi(CT.tongC)} lượt bấm</h4>
+            return `<h4 style="font-size:13px;margin-bottom:4px">Phân loại traffic từ Google theo chủ đề · ${nhan} · ${fi(CT.tongC)} lượt click</h4>
               <div class="cap" style="margin:0 0 8px">Phân loại theo tiêu đề trang, không theo câu tìm kiếm${
                 (()=>{ if(!ngayGSC) return '';
                   const t=CT.tongC/ngayGSC;
                   /* Google cộng theo trang và cộng theo ngày lệch nhau vài lượt do cách quy
-                     lượt bấm về trang đích — chênh dưới 3% là bình thường, không phải lỗi. */
-                  return t>=0.97 ? ` — khớp gần đúng tổng ${fi(ngayGSC)} lượt bấm cùng kỳ`
-                                 : ` — phủ ${fp(t,0)} tổng lượt bấm cùng kỳ`; })()}.${
+                     lượt click về trang đích — chênh dưới 3% là bình thường, không phải lỗi. */
+                  return t>=0.97 ? ` — khớp gần đúng tổng ${fi(ngayGSC)} lượt click cùng kỳ`
+                                 : ` — phủ ${fp(t,0)} tổng lượt click cùng kỳ`; })()}.${
                 dungThang? '' : ` <b>Khung của biểu đồ này là ${CT.ky.days} ngày, khác bốn ô chỉ số phía trên (${c.d} ngày)</b> — tab
                   <span class="mono">GSC_PAGE</span> mới có kỳ tuần. Đổ dữ liệu trang theo tháng vào
                   <span class="mono">GSC_PAGE_MONTHLY</span> là hai khung khớp nhau.`}</div>
@@ -1442,11 +1448,11 @@ function tab0(){
       const pp = kt ? kt.rows.map(r=>({u:String(r.url||'').replace(/^https?:\/\/[^/]+/,'')||'/',
           c:toInt(r.clicks)||0, i:toInt(r.impressions)||0, pos:toFloat(r.position), lt:r.loai_trang||'blog'}))
           .filter(r=>r.c>0).sort((a,b)=>b.c-a.c).slice(0,15) : [];
-      h+=`<h3 style="font-size:14px;margin:18px 0 8px">Trang nhận nhiều lượt bấm nhất</h3>`;
+      h+=`<h3 style="font-size:14px;margin:18px 0 8px">Trang nhận nhiều lượt click nhất</h3>`;
       if(!pp.length){ h+=`<div class="card">${empty('Chưa có kỳ trang nào đủ dữ liệu','')}</div>`; }
       else{
         h+=`<div class="tw"><table><thead><tr><th>Tiêu đề</th><th>Đường dẫn</th><th>Loại</th>
-          <th class="r">Lượt bấm</th><th class="r">Lượt hiện ra</th><th class="r">Tỷ lệ bấm</th><th class="r">Vị trí</th></tr></thead><tbody>`;
+          <th class="r">Lượt click</th><th class="r">Lượt hiện ra</th><th class="r">Tỷ lệ click</th><th class="r">Vị trí</th></tr></thead><tbody>`;
         pp.forEach(r=>{
           h+=`<tr><td class="tt2"><b>${esc(titleCua(r.u))}</b></td>
             <td class="mono tt">${esc(r.u)}</td><td>${pageBadge(r.lt)}</td>
@@ -1631,7 +1637,7 @@ function tab0(){
         <div class="cap">Ba cột phần trăm chia cho <b>tổng từ khoá của chủ đề</b>, không chia cho số đã có hạng —
           từ khoá nhắm mà chưa lọt Top 100 vẫn là chưa hiệu quả, không được loại khỏi mẫu số.
           Bảng sắp theo % Top 10 giảm dần để so hiệu quả giữa các chủ đề; cột số tuyệt đối cho biết quy mô.
-          Chỉ số của từ khoá là thứ hạng — lượt hiện ra, lượt bấm và tỷ lệ bấm nằm ở mục 6, vì đó là chỉ số
+          Chỉ số của từ khoá là thứ hạng — lượt hiện ra, lượt click và tỷ lệ click nằm ở mục 6, vì đó là chỉ số
           của truy vấn, hai bộ khác nhau và chỉ trùng nhau một phần.</div>`;
       /* Cảnh báo "chưa đo được tỷ lệ AI theo từ khoá" đã GỠ 17/08/2026:
          khối 4b · Độ phủ AI làm đúng việc đó, đo theo chủ đề thay vì theo từng từ khoá. */
@@ -1665,12 +1671,12 @@ function tab0(){
         ${kpi({lab:'Số truy vấn khác nhau', val:fi(A.n), tag: A.n>=1000?'chạm trần':'',
                sub: A.n>=1000? 'Google trả tối đa 1.000 mỗi tháng — số thật cao hơn' : `${dN.html} so tháng ${esc(pmQM||'—')}`})}
         ${kpi({lab:'Lượt hiện ra', val:fi(A.i), cls:dI.dir<0?'k-down':'', sub:`${dI.html} so tháng trước`})}
-        ${kpi({lab:'Lượt bấm', val:fi(A.c), cls:dC.dir<0?'k-down':'k-up', sub:`${dC.html} so tháng trước`})}
-        ${kpi({lab:'Tỷ lệ bấm', val:A.i?fp(A.c/A.i,2):'—', sub:co&&B.i?`tháng trước ${fp(B.c/B.i,2)}`:''})}
+        ${kpi({lab:'Lượt click', val:fi(A.c), cls:dC.dir<0?'k-down':'k-up', sub:`${dC.html} so tháng trước`})}
+        ${kpi({lab:'Tỷ lệ click', val:A.i?fp(A.c/A.i,2):'—', sub:co&&B.i?`tháng trước ${fp(B.c/B.i,2)}`:''})}
       </div>`;
     if(QM.thangs.length>1){
       h+=`<div class="card card-p" style="margin-bottom:14px">
-        <h4 style="font-size:13px;margin-bottom:6px">Số truy vấn có lượt bấm và vị trí trung bình theo tháng</h4>
+        <h4 style="font-size:13px;margin-bottom:6px">Số truy vấn có lượt click và vị trí trung bình theo tháng</h4>
         ${comboChart({
           labels: QM.thangs.map(t=>t.slice(2)),
           bars  : QM.thangs.map(t=>new Set(QM.rows.filter(r=>r.thang===t && r.c>0).map(r=>r.q)).size),
@@ -1679,7 +1685,7 @@ function tab0(){
                    color:CO.warn, invert:true, fmt:v=>nf1.format(v)},
           w:1000, h:230, maxLabels:17, aria:'số truy vấn theo tháng'
         })}
-        <div class="cap">Cột: số truy vấn thật sự có người bấm. Đường: vị trí trung bình, trục đảo chiều.
+        <div class="cap">Cột: số truy vấn thật sự có người click. Đường: vị trí trung bình, trục đảo chiều.
           Google trả tối đa 1.000 truy vấn mỗi tháng nên cột là chặn dưới.</div>
       </div>`;
     }
@@ -1694,11 +1700,11 @@ function tab0(){
 
 /* Phân loại chủ đề dựa trên TRANG, không dựa trên truy vấn.
    Lý do: bảng truy vấn bị Google cắt còn 1.000 dòng mỗi kỳ nên chỉ giải thích được
-   khoảng 20% lượt bấm. Bảng trang cũng bị cắt 1.000 dòng nhưng phần bị cắt toàn là
-   trang không có lượt bấm nào, nên tổng vẫn khớp gần đúng với tổng thật.
+   khoảng 20% lượt click. Bảng trang cũng bị cắt 1.000 dòng nhưng phần bị cắt toàn là
+   trang không có lượt click nào, nên tổng vẫn khớp gần đúng với tổng thật.
    Dùng chung bộ luật chu_de_query, áp lên tiêu đề bài thay vì áp lên câu tìm kiếm. */
 /* Gán nhãn cho MỘT trang theo một bộ luật. Dùng chung cho cả chủ đề lẫn ý định,
-   để hai biểu đồ cùng một hệ quy chiếu: cùng nguồn trang, cùng tổng lượt bấm. */
+   để hai biểu đồ cùng một hệ quy chiếu: cùng nguồn trang, cùng tổng lượt click. */
 function nhanTrang(u, luat, cache, macDinh, trangChu){
   if(u==='/' || u===''){
     /* PAGE_META ghi tiêu đề trang chủ là "Trang chủ", không khớp luật nào.
@@ -1710,7 +1716,7 @@ function nhanTrang(u, luat, cache, macDinh, trangChu){
   return phanLoai(src, luat, cache).gan || macDinh;
 }
 
-/* Gộp lượt bấm theo tháng + nhãn, để đổ vào cotXepThang. */
+/* Gộp lượt click theo tháng + nhãn, để đổ vào cotXepThang. */
 function trangTheoThang(loaiLuat, macDinh, trangChu){
   const luat=layLuat(loaiLuat);
   const rows=D.GSC_PAGE_MONTHLY||[];
@@ -1815,7 +1821,7 @@ function khoiGA4(){
         Analytics đếm bằng thẻ đo đặt trên web nên tính cả người vào từ Facebook, Zalo, quảng cáo hay gõ thẳng địa chỉ,
         đồng thời mất số khi người dùng chặn cookie hoặc thoát trước lúc thẻ kịp chạy.
         Cột giữa đã lọc riêng kênh tìm kiếm tự nhiên nhưng vẫn gộp cả Bing và Cốc Cốc, không riêng Google —
-        và một người bấm vào một lần rồi quay lại sau nửa tiếng sẽ tính thành hai phiên nhưng chỉ một click.
+        và một người click vào một lần rồi quay lại sau nửa tiếng sẽ tính thành hai phiên nhưng chỉ một click.
         ${lech!=null?`Cùng khoảng ${dvn(k0.tu)}–${dvn(k0.den)}: Search Console ghi ${fi(k0.gscClicks)} click, Analytics ghi ${fi(k0.org)} phiên tự nhiên, chênh ${nf1.format(Math.abs(lech*100))}% — mức chênh này bình thường.`:''}
         ${!du?`<br><b>Chưa so kỳ được:</b> kỳ trước mới có ${k1?k1.ngay:0}/${M.N} ngày dữ liệu.`:''}
       </div>
@@ -2148,7 +2154,7 @@ function tab2(){
         Quét trực tiếp trả lời <i>“hôm nay từ khoá này đứng thứ mấy”</i>.
         Search Console trả lời <i>“suốt ${esc(pLabel(M.selRank))} vừa rồi, trung bình website hiện ra ở vị trí nào”</i> —
         con số này bị các lần hiện ra ở hạng thấp kéo xuống, nên thường trông tệ hơn.
-        <br><br>Khi báo cáo thứ hạng, dùng <b>số quét trực tiếp</b>. Khi báo cáo hiệu quả hiển thị và lượt bấm,
+        <br><br>Khi báo cáo thứ hạng, dùng <b>số quét trực tiếp</b>. Khi báo cáo hiệu quả hiển thị và lượt click,
         dùng <b>Search Console</b>. Không cộng hai số lại.`)}
     </div>`;
   }
@@ -2196,7 +2202,7 @@ function tab2(){
 
         <div class="g3" style="margin-top:12px;margin-bottom:12px">
           ${kpi({lab:'Truy vấn nằm ngoài bộ từ khoá', val:fp(qNgoai/qTong,1), cls:'k-warn', sub:`${fi(qNgoai)} truy vấn dự án không nhắm tới`})}
-          ${kpi({lab:'Click đến từ nhóm ngoài đó', val:cTong?fp(cNgoai/cTong,1):'—', sub:`${fi(cNgoai)} lượt bấm`})}
+          ${kpi({lab:'Click đến từ nhóm ngoài đó', val:cTong?fp(cNgoai/cTong,1):'—', sub:`${fi(cNgoai)} lượt click`})}
           ${kpi({lab:'Từ khoá chưa từng hiện ra', val:fi(kwChua), cls:'k-warn', sub:`trên ${fi(boTarget.size)} từ khoá đang theo dõi`})}
         </div>
 
@@ -2205,7 +2211,7 @@ function tab2(){
           Có <b>${fi(kwChua)}</b> từ khoá đang theo dõi mà website <b>chưa từng một lần hiện ra</b> trên kết quả tìm —
           Search Console chỉ báo cáo khi có lượt hiển thị, nên không có số ở đây nghĩa là chưa xuất hiện,
           không phải lỗi đo và không phải hạng 0.<br>
-          Ngược lại, <b>${fp(cTong?cNgoai/cTong:0,0)}</b> lượt bấm đến từ những câu tìm dự án không hề nhắm tới.`)}
+          Ngược lại, <b>${fp(cTong?cNgoai/cTong:0,0)}</b> lượt click đến từ những câu tìm dự án không hề nhắm tới.`)}
       </div>`;
     }
   }
@@ -2225,15 +2231,15 @@ function tab2(){
       <div class="g4" style="margin-bottom:12px">
         ${kpi({lab:'Từ khoá có thứ hạng', val:`${fi(dsR.length)}<small>/${fi(nTheoDoi)}</small>`,
                sub:`${pct==null?'—':fp(pct,1)} bộ từ khoá đang theo dõi`})}
-        ${kpi({lab:'Lượt bấm thực tế mang về', val:fi(clickR),
-               sub:`chỉ <b>${fi(nCoClick)}</b> từ khoá thật sự có người bấm`})}
+        ${kpi({lab:'Lượt click thực tế mang về', val:fi(clickR),
+               sub:`chỉ <b>${fi(nCoClick)}</b> từ khoá thật sự có người click`})}
         ${kpi({lab:'Lượt hiện ra trên Google', val:fi(imprR),
-               sub:`tỷ lệ bấm ${imprR?fp(clickR/imprR,2):'—'}`})}
+               sub:`tỷ lệ click ${imprR?fp(clickR/imprR,2):'—'}`})}
         ${kpi({lab:'Độ dài kỳ đo', val:`${soNgay==null?'—':fi(soNgay)}<small> ngày</small>`,
                sub:'đổi ở ô <span class="mono">gsc_rank_ky_ngay</span> trong CONFIG'})}
       </div>
       <div class="tw"><table><thead><tr><th>Nhóm thứ hạng</th><th class="r">Số từ khoá</th>
-        <th class="r">Lượt hiện ra</th><th class="r">Lượt bấm</th><th class="r">Tỷ lệ bấm</th></tr></thead><tbody>`;
+        <th class="r">Lượt hiện ra</th><th class="r">Lượt click</th><th class="r">Tỷ lệ click</th></tr></thead><tbody>`;
     bins.forEach(([nhan,a,b])=>{
       const g=dsR.filter(k=>k.vi>a && k.vi<=b);
       const gc=g.reduce((x,y)=>x+(y.viClicks||0),0), gi=g.reduce((x,y)=>x+(y.viImpr||0),0);
@@ -2317,8 +2323,8 @@ function tab2(){
   h+=`<div class="sec"><div class="sec-h"><h3>Bộ từ khoá theo chủ đề</h3>
       <span class="src">thứ hạng kỳ ${pLabel(M.selRank)} · ${srcLink('KEYWORD_RANK_WEEKLY')}</span></div>
     <div class="tw"><table><thead><tr>
-      ${th('Chủ đề','s')}<th>Nhóm</th>${th('Số từ khoá','n','r')}${th('Lượt bấm','n','r')}
-      ${th('Lượt hiện ra','n','r')}${th('Tỷ lệ bấm','n','r')}${th('Có thứ hạng','n','r')}${th('Top 10','n','r')}${th('Vị trí TB','n','r')}
+      ${th('Chủ đề','s')}<th>Nhóm</th>${th('Số từ khoá','n','r')}${th('Lượt click','n','r')}
+      ${th('Lượt hiện ra','n','r')}${th('Tỷ lệ click','n','r')}${th('Có thứ hạng','n','r')}${th('Top 10','n','r')}${th('Vị trí TB','n','r')}
     </tr></thead><tbody>`;
   topics.forEach(t=>{
     const ctr = t.impr? t.click/t.impr : null;
@@ -2334,8 +2340,8 @@ function tab2(){
       <td class="r" data-v="${t.pos==null?999:t.pos}">${f1(t.pos)}</td></tr>`;
   });
   h+=`</tbody></table></div>
-  <div class="cap">Lượt bấm và lượt hiện ra là <b>số thật Search Console ghi nhận</b>, không phải lượt tìm kiếm ước lượng.
-   Chủ đề xếp trên là chủ đề mang về nhiều lượt bấm nhất.
+  <div class="cap">Lượt click và lượt hiện ra là <b>số thật Search Console ghi nhận</b>, không phải lượt tìm kiếm ước lượng.
+   Chủ đề xếp trên là chủ đề mang về nhiều lượt click nhất.
    Cột “có thứ hạng” đếm số từ khoá thực sự lọt bảng xếp hạng trong kỳ — ô trống nghĩa là chưa lọt, không phải hạng 0.</div></div>`;
 
   /* --- cảnh báo tụt hạng / mốc cũ --- */
@@ -2414,7 +2420,7 @@ function rankTable(rows, isDrop){
   let h=`<div class="tw"><table id="${isDrop?'tb-drop':'tb-kw'}"><thead><tr>
     ${th('Từ khoá','s')}<th>Chủ đề</th>${th('Vị trí','n','r')}
     ${M.hasPrevRank?th('Kỳ trước','n','r')+'<th class="r">Biến động</th>':'<th class="r">Mốc cũ</th>'}
-    ${th('Lượt hiện ra','n','r')}${th('Lượt bấm','n','r')}<th>URL</th></tr></thead><tbody>`;
+    ${th('Lượt hiện ra','n','r')}${th('Lượt click','n','r')}<th>URL</th></tr></thead><tbody>`;
   rows.forEach(k=>{
     let cmp='';
     if(M.hasPrevRank){
@@ -2476,9 +2482,9 @@ function tab3(){
 
   /* --- chỉ số 2 --- */
   h+=`<div class="grid g4" style="margin-bottom:16px">
-    ${kpi({lab:'Bấm vào trang khoá học', val: ps.pctTM==null?'—':fp(ps.pctTM,1),
+    ${kpi({lab:'Click vào trang khoá học', val: ps.pctTM==null?'—':fp(ps.pctTM,1),
            sub:`${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)} lượt · trang khoá học, học phí, tuyển sinh`})}
-    ${kpi({lab:'Bấm vào bài blog', val: ps.tot.c? fp(ps.out.blog.c/ps.tot.c,1):'—', sub:`${fi(ps.out.blog.c)} lượt · trải trên ${fi(ps.out.blog.n)} bài`})}
+    ${kpi({lab:'Click vào bài blog', val: ps.tot.c? fp(ps.out.blog.c/ps.tot.c,1):'—', sub:`${fi(ps.out.blog.c)} lượt · trải trên ${fi(ps.out.blog.n)} bài`})}
     ${kpi({lab:'Người tìm thẳng tên Timona', val: qs.tot.c? fp(qs.brand.c/qs.tot.c,1):'—', sub:`${fi(qs.brand.c)} lượt · đã biết Timona từ trước`})}
     ${kpi({lab:'Người tìm việc ngoài ngành', val: qs.tot.c? fp(qs.khac.c/qs.tot.c,1):'—',
            cls:'k-warn', sub:`${fi(qs.khac.c)} lượt · không tìm chỗ học nghề`})}
@@ -2493,19 +2499,19 @@ function tab3(){
       {k:'Bài blog', v:ps.out.blog?ps.out.blog.c:0, c:'#B9C6D6'}
     ], aria:'tỷ trọng click theo loại trang'})}
     <div class="legend">
-      <span><i style="background:${CO.up}"></i><b>Trang khoá học ${ps.pctTM==null?'—':fp(ps.pctTM,1)}</b> — ${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)} lượt bấm trên ${fi(ps.out.thuong_mai?ps.out.thuong_mai.n:0)} trang (khoá học, học phí, tuyển sinh, liên hệ)</span>
-      <span><i style="background:${CO.navy}"></i>Trang chủ ${ps.tot.c?fp((ps.out.homepage?ps.out.homepage.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.homepage?ps.out.homepage.c:0)} lượt bấm</span>
-      <span><i style="background:#B9C6D6"></i>Bài blog ${ps.tot.c?fp((ps.out.blog?ps.out.blog.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.blog?ps.out.blog.c:0)} lượt bấm trên ${fi(ps.out.blog?ps.out.blog.n:0)} bài</span>
+      <span><i style="background:${CO.up}"></i><b>Trang khoá học ${ps.pctTM==null?'—':fp(ps.pctTM,1)}</b> — ${fi(ps.out.thuong_mai?ps.out.thuong_mai.c:0)} lượt click trên ${fi(ps.out.thuong_mai?ps.out.thuong_mai.n:0)} trang (khoá học, học phí, tuyển sinh, liên hệ)</span>
+      <span><i style="background:${CO.navy}"></i>Trang chủ ${ps.tot.c?fp((ps.out.homepage?ps.out.homepage.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.homepage?ps.out.homepage.c:0)} lượt click</span>
+      <span><i style="background:#B9C6D6"></i>Bài blog ${ps.tot.c?fp((ps.out.blog?ps.out.blog.c:0)/ps.tot.c,1):'—'} — ${fi(ps.out.blog?ps.out.blog.c:0)} lượt click trên ${fi(ps.out.blog?ps.out.blog.n:0)} bài</span>
     </div>
     <div class="cap">Luật phân loại nằm ở tab <b>CLASSIFY_RULES</b> (${(D.CLASSIFY_RULES||[]).filter(r=>r.loai_rule==='trang').length} luật cho trang).
      Sửa luật ở đó là đổi thẳng chỉ số quan trọng nhất của báo cáo này — sửa xong phải chạy lại script.</div>
   </div>`;
 
   h+=`${noteOff('down','◆',
-    `<b>Vì sao tỷ lệ này thấp.</b> Trong ${fi(qs.tot.c)} lượt bấm của kỳ này,
+    `<b>Vì sao tỷ lệ này thấp.</b> Trong ${fi(qs.tot.c)} lượt click của kỳ này,
      <b>${fi(qs.khac.c)} lượt</b> (${qs.tot.c?fp(qs.khac.c/qs.tot.c,1):'—'}) đến từ những câu tìm
      <b>không có dấu hiệu muốn học nghề</b> — người ta tìm hiểu kiến thức, tra thủ tục, hoặc tìm dịch vụ làm đẹp.
-     Chỉ ${fi(qs.intent?qs.intent.c:0)} lượt bấm đến từ câu tìm chỗ học.
+     Chỉ ${fi(qs.intent?qs.intent.c:0)} lượt click đến từ câu tìm chỗ học.
      Đây là vấn đề <b>chọn mục tiêu nội dung từ đầu</b>, không phải vấn đề kỹ thuật SEO.`)}</div>`;
 
   /* --- top trang --- */
@@ -2584,7 +2590,7 @@ function tab3(){
   });
   h+=`</tbody></table></div>
     <div class="cap">Cột lượt tìm/tháng ở bảng này là <b>ước lượng của công cụ nghiên cứu từ khoá</b>, không phải số đo.
-      Đây là chỗ duy nhất trong dashboard còn dùng số ước lượng — vì trang đã hỏng thì không còn lượt bấm thật nào để đếm,
+      Đây là chỗ duy nhất trong dashboard còn dùng số ước lượng — vì trang đã hỏng thì không còn lượt click thật nào để đếm,
       nên chỉ có thể ước chừng đang mất bao nhiêu.</div>
     ${noteOff('warn','⚠︎', `<b>Không kiểm tra được 404 tự động.</b> Website đang bật tường lửa chặn bot (lỗi IS-018):
       mọi URL gọi từ máy chủ đều trả về mã 200 kèm trang chờ, kể cả URL không tồn tại.
@@ -2783,7 +2789,7 @@ function tab5(){
         <li>Nội dung điểm khác biệt số 22 đang trống, bản gốc chỉ có tiêu đề — <b>chờ sếp</b>.</li>
         <li>Câu điểm khác biệt số 21 bị cụt ở bản gốc (“…sân chơi cho các”) — <b>chờ sếp bổ sung</b>.</li>
         <li>URL <span class="mono">/hoc-nghe-gi-hot-nhat-hien-nay/</span> trả 404 — gỡ nhầm hay có chủ đích, <b>Linh xác minh</b>.</li>
-        <li>Hai nhóm nội dung mã ngành và thuế spa kéo 1.705 lượt bấm nhưng người đọc là chủ cơ sở, không phải người tìm chỗ học — giữ, cài phễu, hay bỏ, <b>chờ anh Hiếu</b>.</li>
+        <li>Hai nhóm nội dung mã ngành và thuế spa kéo 1.705 lượt click nhưng người đọc là chủ cơ sở, không phải người tìm chỗ học — giữ, cài phễu, hay bỏ, <b>chờ anh Hiếu</b>.</li>
         <li>Có bổ sung từ khoá nhóm B và cụm mẹ &amp; bé vào bảng không — <b>chờ anh Hiếu</b>.</li>
       </ol>
     </div></div>`;
@@ -3038,7 +3044,7 @@ function tab6(){
     const so = dk.ctr!=null ? (dk.ctr<ctrTB ? 'thấp hơn' : 'cao hơn') : null;
     h+=note(dk.ctr!=null && dk.ctr<ctrTB ? 'warn':'mut','◆',
       `<b>Nhóm gần tiền nhất đang yếu.</b> “${esc(YD_TT[1])}” chiếm <b>${fp(tI?dk.i/tI:null,1)}</b> lượt hiển thị
-       nhưng chỉ <b>${fp(tC?dk.c/tC:null,1)}</b> lượt bấm. CTR nhóm này là <b>${fp(dk.ctr)}</b>,
+       nhưng chỉ <b>${fp(tC?dk.c/tC:null,1)}</b> lượt click. CTR nhóm này là <b>${fp(dk.ctr)}</b>,
        ${so} mức trung bình <b>${fp(ctrTB)}</b>. Người đang hỏi học phí, hỏi giá khoá học có thấy Timona trên trang kết quả
        nhưng phần lớn không bấm vào.` +
       (br? ` Đối chiếu: nhóm “${esc(YD_TT[0])}” chỉ ${fp(tI?br.i/tI:null,1)} lượt hiển thị mà đạt CTR <b>${fp(br.ctr)}</b> —
