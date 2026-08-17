@@ -1584,7 +1584,9 @@ function tab0(){
         const o=gCD.get(cd); o.n++;
         if(r.vi!=null){ o.co++; o.vis.push(r.vi); if(r.vi<=3) o.t3++; if(r.vi<=10) o.t10++; }
       });
-      const dsCD=[...gCD.values()].sort((a,b)=>b.t10-a.t10).slice(0,12);
+      /* Sắp theo TỶ TRỌNG Top 10, không theo số tuyệt đối: mục đích của bảng là so
+         hiệu quả giữa các chủ đề, mà chủ đề lớn luôn thắng về số tuyệt đối. */
+      const dsCD=[...gCD.values()].sort((a,b)=>(b.n?b.t10/b.n:0)-(a.n?a.t10/a.n:0)).slice(0,14);
       const trungVi=a=>{ if(!a.length) return null; const s=a.slice().sort((x,y)=>x-y); const m=s.length>>1;
         return s.length%2? s[m] : (s[m-1]+s[m])/2; };
       h+=`<div class="grid g2" style="margin-bottom:14px">
@@ -1599,18 +1601,38 @@ function tab0(){
               {k:'Rơi khỏi Top 100', v:dsBD.roiRa, c:CO.warn}], lw:140, w:520, mr:52})
             : empty('Mới có một mốc quét', `Cần mốc thứ hai để so. Mốc kế tiếp theo lịch: 01/09/2026.`)}
         </div>
-      </div>
-      <div class="tw"><table><thead><tr><th>Chủ đề</th><th class="r">Số từ khoá</th>
-        <th class="r">Có thứ hạng</th><th class="r">Top 3</th><th class="r">Top 10</th>
+      </div>`;
+      const tTong=dsCD.reduce((a,b)=>a+b.n,0), tCo=dsCD.reduce((a,b)=>a+b.co,0);
+      const tT3=dsCD.reduce((a,b)=>a+b.t3,0), tT10=dsCD.reduce((a,b)=>a+b.t10,0);
+      h+=`<div class="tw"><table><thead><tr><th>Chủ đề</th><th class="r">Số từ khoá</th>
+        <th class="r">Có thứ hạng</th><th class="r">% có hạng</th>
+        <th class="r">Top 3</th><th class="r">% Top 3</th>
+        <th class="r">Top 10</th><th class="r">% Top 10</th>
         <th class="r">Hạng trung vị</th></tr></thead><tbody>`;
       dsCD.forEach(o=>{
-        h+=`<tr><td><b>${esc(o.cd)}</b></td><td class="r">${fi(o.n)}</td>
-          <td class="r">${fi(o.co)}</td><td class="r"><b>${fi(o.t3)}</b></td>
-          <td class="r"><b>${fi(o.t10)}</b></td><td class="r">${f1(trungVi(o.vis))}</td></tr>`;
+        /* Tô nền chủ đề dưới 10 từ khoá: tỷ trọng của mẫu quá nhỏ không đáng tin,
+           một từ khoá lên hạng là đổi cả chục phần trăm. */
+        const nho = o.n<10;
+        h+=`<tr${nho?' style="background:#FDFBF4"':''}>
+          <td><b>${esc(o.cd)}</b>${nho?' <span class="bd bd-md">mẫu nhỏ</span>':''}</td>
+          <td class="r">${fi(o.n)}</td>
+          <td class="r">${fi(o.co)}</td><td class="r">${o.n?fp(o.co/o.n,1):'—'}</td>
+          <td class="r"><b>${fi(o.t3)}</b></td><td class="r"><b>${o.n?fp(o.t3/o.n,1):'—'}</b></td>
+          <td class="r"><b>${fi(o.t10)}</b></td><td class="r"><b>${o.n?fp(o.t10/o.n,1):'—'}</b></td>
+          <td class="r">${f1(trungVi(o.vis))}</td></tr>`;
       });
+      h+=`<tr style="background:#F7FBFF"><td><b>Tổng</b></td>
+        <td class="r"><b>${fi(tTong)}</b></td>
+        <td class="r"><b>${fi(tCo)}</b></td><td class="r"><b>${tTong?fp(tCo/tTong,1):'—'}</b></td>
+        <td class="r"><b>${fi(tT3)}</b></td><td class="r"><b>${tTong?fp(tT3/tTong,1):'—'}</b></td>
+        <td class="r"><b>${fi(tT10)}</b></td><td class="r"><b>${tTong?fp(tT10/tTong,1):'—'}</b></td>
+        <td class="r"></td></tr>`;
       h+=`</tbody></table></div>
-        <div class="cap">Chỉ số của từ khoá là thứ hạng. Lượt hiện ra, lượt bấm và tỷ lệ bấm nằm ở mục 6,
-          vì đó là chỉ số của truy vấn — hai bộ khác nhau, chỉ trùng nhau một phần.</div>`;
+        <div class="cap">Ba cột phần trăm chia cho <b>tổng từ khoá của chủ đề</b>, không chia cho số đã có hạng —
+          từ khoá nhắm mà chưa lọt Top 100 vẫn là chưa hiệu quả, không được loại khỏi mẫu số.
+          Bảng sắp theo % Top 10 giảm dần để so hiệu quả giữa các chủ đề; cột số tuyệt đối cho biết quy mô.
+          Chỉ số của từ khoá là thứ hạng — lượt hiện ra, lượt bấm và tỷ lệ bấm nằm ở mục 6, vì đó là chỉ số
+          của truy vấn, hai bộ khác nhau và chỉ trùng nhau một phần.</div>`;
       /* Cảnh báo "chưa đo được tỷ lệ AI theo từ khoá" đã GỠ 17/08/2026:
          khối 4b · Độ phủ AI làm đúng việc đó, đo theo chủ đề thay vì theo từng từ khoá. */
     }
