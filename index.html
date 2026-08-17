@@ -285,12 +285,19 @@ const GID = {
   GA4_EVENT:'1429719912', GA4_CHANNEL:'1933458138', PAGE_META:'286215411',
   GSC_QUERY_MONTHLY:'1616632813',
   LEAD:'1456998018',  // dữ liệu form đăng ký, đổ vào sau
-  KEYWORD_RANK_SERP:'666131142'   // quét SERP điểm-thời-gian bằng SpinEditor, nhập tay 2 lần/tháng
+  KEYWORD_RANK_SERP:'666131142',  // quét SERP điểm-thời-gian bằng SpinEditor, nhập tay 2 lần/tháng
+  /* Lượt xem từng trang của GA4 — mẫu số để tính tỷ lệ ra khách theo trang.
+     Chưa tạo tab: điền GID vào đây là cột CR ở mục 1 tự có số. */
+  GA4_PAGE:'',
+  /* Đo độ phủ AI theo chủ đề: bộ 80 câu hỏi cố định + nhật ký quét hằng tuần.
+     Điền GID sau khi tạo tab là khối "AI nhắc Timona theo chủ đề" tự hiện. */
+  AI_TOPIC_QUESTIONS:'', AI_TOPIC_LOG:''
 };
 /* Cột bắt buộc của mỗi tab. Dùng để chặn một cái bẫy của Google:
    gọi gviz với tên tab không tồn tại thì nó trả về tab ĐẦU TIÊN kèm mã 200,
    không hề báo lỗi. Không kiểm cột thì dashboard sẽ nuốt nhầm dữ liệu tab khác. */
-const COT_BUOC = { GA4_DAILY:['ngay','sessions'], LEAD:['ngay'],
+const COT_BUOC = { GA4_DAILY:['ngay','sessions'], LEAD:['ngay'], GA4_PAGE:['thang','duong_dan'],
+  AI_TOPIC_QUESTIONS:['cau_id','chu_de'], AI_TOPIC_LOG:['ngay_quet','cau_id'],
   GA4_EVENT:['ten_su_kien'], GA4_CHANNEL:['thang','nguon'],
   PAGE_META:['url','tieu_de'], GSC_QUERY_MONTHLY:['thang','query'] };
 const TABS = [
@@ -369,7 +376,8 @@ async function fetchTab(name, gid, bust){
   return [];
 }
 /* Tab chưa chắc tồn tại — không đọc được thì bỏ qua lặng lẽ, không báo lỗi đỏ. */
-const TAB_TUY_CHON = new Set(['GA4_DAILY','LEAD','KEYWORD_RANK_SERP']);
+const TAB_TUY_CHON = new Set(['GA4_DAILY','LEAD','KEYWORD_RANK_SERP','GA4_PAGE',
+  'AI_TOPIC_QUESTIONS','AI_TOPIC_LOG']);
 
 /* ============================================================================
    2 · ĐỌC SỐ — Sheet đang để ngôn ngữ Việt: "." ngăn nghìn, "," thập phân
@@ -881,6 +889,70 @@ function prep(){
     return {khoi:r.khoi, nhip:r.nhip, nhipNgay:nhip, nguon:r.nguon, phut:toInt(r.cong_suc_phut),
             gn, songay:dn, tt, ai:r.nguoi_cap_nhat||'', ghi:r.ghi_chu||''};
   }).filter(r=>r.khoi);
+  /* --- Độ phủ AI theo chủ đề --- */
+  {
+    const cauCD=new Map();
+    (D.AI_TOPIC_QUESTIONS||[]).forEach(r=>{
+      if(String(r.dang_bat||'TRUE').toUpperCase()==='FALSE') return;
+      if(r.cau_id) cauCD.set(String(r.cau_id).trim(), (r.chu_de||'—').trim());
+    });
+    const log=(D.AI_TOPIC_LOG||[]).map(r=>({
+      ngay:dOnly(r.ngay_quet), id:String(r.cau_id||'').trim(),
+      nen:(r.nen_tang||'').trim(),
+      nhac: String(r.co_nhac||'').trim().toUpperCase()==='TRUE',
+      url:r.url_duoc_dan||''
+    })).filter(r=>r.id && r.ngay && cauCD.has(r.id));
+
+    if(log.length){
+      /* Kỳ báo cáo = tháng gần nhất có dữ liệu quét. */
+      const thangs=[...new Set(log.map(r=>r.ngay.slice(0,7)))].sort();
+      const tNay=thangs[thangs.length-1], tTruoc=thangs.length>1? thangs[thangs.length-2] : null;
+      /* Trọng số = số từ khoá thật của chủ đề trong KEYWORD_MASTER.
+         Bộ câu hỏi chia 5 câu sàn cho mọi chủ đề, nên chủ đề nhỏ bị nâng trọng số
+         giả nếu cộng thẳng. Bình quân có trọng số trả tổng về đúng cơ cấu từ khoá. */
+      const wKw=new Map();
+      (M.kw||[]).forEach(k=>{ const c=k.chu_de||'—'; wKw.set(c,(wKw.get(c)||0)+1); });
+      /* Bộ câu hỏi gọi mảng trường lớp là "Trường nghề · Học viện" cho khỏi lẫn với thương hiệu;
+         KEYWORD_MASTER vẫn đang ghi tên cũ. Ánh xạ ở đây để trọng số không bị 0. */
+      const TEN_CD={'Trường nghề · Học viện':'Học viện / Thương hiệu'};
+      const trongSo = cd => wKw.get(cd) ?? wKw.get(TEN_CD[cd]) ?? 0;
+
+      const gop=(thang)=>{
+        const g=new Map();
+        log.filter(r=>r.ngay.slice(0,7)===thang).forEach(r=>{
+          const cd=cauCD.get(r.id);
+          if(!g.has(cd)) g.set(cd,{cd, luot:0, nhac:0, cau:new Set(), url:new Set()});
+          const o=g.get(cd); o.luot++; if(r.nhac){ o.nhac++; if(r.url) o.url.add(r.url); } o.cau.add(r.id);
+        });
+        return [...g.values()].map(o=>({...o, ty: o.luot? o.nhac/o.luot : null,
+          soCau:o.cau.size, soUrl:o.url.size, w: trongSo(o.cd)}));
+      };
+      const nay=gop(tNay), truoc=tTruoc? gop(tTruoc) : [];
+      const mapTruoc=new Map(truoc.map(o=>[o.cd,o.ty]));
+      nay.forEach(o=>{ o.tyTruoc = mapTruoc.has(o.cd)? mapTruoc.get(o.cd) : null; });
+
+      /* Tổng thô = cộng tất cả lượt, mọi chủ đề nặng bằng nhau.
+         Tổng có trọng số = trung bình tỷ lệ từng chủ đề, nhân trọng số theo số từ khoá. */
+      const tongLuot=nay.reduce((a,b)=>a+b.luot,0), tongNhac=nay.reduce((a,b)=>a+b.nhac,0);
+      const tongW=nay.reduce((a,b)=>a+b.w,0);
+      const tyW = tongW? nay.reduce((a,b)=>a+(b.ty||0)*b.w,0)/tongW : null;
+      const tongWT=truoc.reduce((a,b)=>a+b.w,0);
+      const tyWT = tongWT? truoc.reduce((a,b)=>a+(b.ty||0)*b.w,0)/tongWT : null;
+
+      M.aiTopic={
+        thang:tNay, thangTruoc:tTruoc,
+        rows: nay.sort((a,b)=>(b.ty??-1)-(a.ty??-1)),
+        luot:tongLuot, nhac:tongNhac,
+        tyTho: tongLuot? tongNhac/tongLuot : null,
+        tyW, tyWT,
+        soCau: new Set(log.filter(r=>r.ngay.slice(0,7)===tNay).map(r=>r.id)).size,
+        soCauBo: cauCD.size,
+        nenTang: [...new Set(log.filter(r=>r.ngay.slice(0,7)===tNay).map(r=>r.nen).filter(Boolean))].join(', '),
+        soLan: new Set(log.filter(r=>r.ngay.slice(0,7)===tNay).map(r=>r.ngay)).size
+      };
+    } else M.aiTopic=null;
+  }
+
   M.aiRank = D.AI_RANK_LOG||[];
   M.uspLog = D.USP_CHECK_LOG||[];
 }
@@ -1147,7 +1219,7 @@ function tab0(){
         ${kpi({lab:'Tổng khách trong tháng', val:fi(ky.length), cls:dL.dir<0?'k-down':'k-up',
                sub: kyT.length? `${dL.html} so tháng ${esc(pm)} (${fi(kyT.length)} khách)` : `chưa có số tháng ${esc(pm)} để so`})}
         ${kpi({lab:'Điền form trên website', val:fi(qForm), sub:`${fp(qForm/ky.length,1)} tổng số khách`})}
-        ${kpi({lab:'Gọi hotline', val:fi(ky.length-qForm), sub:`${fp((ky.length-qForm)/ky.length,1)} · Thônh qua website`})}
+        ${kpi({lab:'Gọi hotline', val:fi(ky.length-qForm), sub:`${fp((ky.length-qForm)/ky.length,1)} · không qua website`})}
         ${kpi({lab:'Tỷ lệ ra khách', val: cr==null?'—':fp(cr,2), cls: cr==null?'':(dCR.dir<0?'k-down':'k-up'),
                sub: cr==null? 'chưa có số phiên để tính'
                     : `${fi(ky.length)} khách trên ${fi(gN.se)} phiên${crP!=null?` · ${dCR.html} so tháng trước`:''}`})}
@@ -1158,22 +1230,52 @@ function tab0(){
         const moiTrang=[...new Set([...gT.keys(), ...gTT.keys()])]
           .map(u=>({u, nay:gT.get(u)||0, truoc:gTT.get(u)||0}))
           .sort((a,b)=> b.nay-a.nay || b.truoc-a.truoc);
+        /* Mẫu số của tỷ lệ ra khách theo trang: lượt xem trang của GA4, vì khách điền form
+           đến từ mọi nguồn chứ không riêng Google. Lấy lượt bấm Search Console làm mẫu số
+           sẽ ra tỷ lệ 30–50%, vô lý — mẫu số đó chỉ đếm người đến từ Google. */
+        const gaP=new Map();
+        (D.GA4_PAGE||[]).forEach(r=>{
+          if(String(r.thang||'').slice(0,7)!==thang) return;
+          const u='/'+String(r.duong_dan||'').replace(/^https?:\/\/[^/]+/,'').replace(/[?#].*$/,'').replace(/^\/+|\/+$/g,'')+'/';
+          const v=toInt(r.luot_xem)||toInt(r.phien)||0;
+          gaP.set(u,(gaP.get(u)||0)+v);
+        });
+        const coGaP=gaP.size>0;
+        const chuanU=u=>'/'+String(u||'').replace(/[?#].*$/,'').replace(/^\/+|\/+$/g,'')+'/';
         h+=`<div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Đường dẫn</th>
-          <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
+          <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th>
+          <th class="r">Lượt xem trang</th><th class="r">Tỷ lệ ra khách</th></tr></thead><tbody>`;
+        let tongXem=0;
         moiTrang.forEach(r=>{
           const t=titleCua(r.u);
           const ch = r.truoc? delta(r.nay, r.truoc, 'up').html
                    : (r.nay? '<span class="bd bd-ok">trang mới</span>' : '');
+          const xem = coGaP? (gaP.get(chuanU(r.u))||0) : null;
+          if(xem) tongXem+=xem;
           h+=`<tr><td class="tt2"><b>${esc(t==='—'? r.u : t)}</b></td>
             <td class="mono tt">${esc(r.u)}</td>
             <td class="r"><b>${r.nay?fi(r.nay):'<span style="color:var(--faint)">·</span>'}</b></td>
             <td class="r">${r.truoc?fi(r.truoc):'<span style="color:var(--faint)">·</span>'}</td>
-            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td></tr>`;
+            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td>
+            <td class="r">${xem?fi(xem):'—'}</td>
+            <td class="r"><b>${xem&&r.nay? fp(r.nay/xem,2) : '—'}</b></td></tr>`;
         });
+        const formTruoc=kyT.filter(l=>l.url).length;
         h+=`<tr style="background:#F7FBFF"><td><b>Tổng điền form</b></td><td></td>
-          <td class="r"><b>${fi(qForm)}</b></td><td class="r"><b>${fi(kyT.filter(l=>l.url).length)}</b></td>
-          <td class="r">${kyT.filter(l=>l.url).length? delta(qForm, kyT.filter(l=>l.url).length,'up').html : ''}</td></tr>`;
+          <td class="r"><b>${fi(qForm)}</b></td><td class="r"><b>${fi(formTruoc)}</b></td>
+          <td class="r">${formTruoc? delta(qForm, formTruoc,'up').html : ''}</td>
+          <td class="r"><b>${tongXem?fi(tongXem):'—'}</b></td>
+          <td class="r"><b>${tongXem? fp(qForm/tongXem,2) : '—'}</b></td></tr>`;
         h+=`</tbody></table></div>`;
+        if(!coGaP){
+          h+=`<div style="margin-top:10px">${note('warn','⚠︎',
+            `<b>Hai cột cuối chưa có số vì thiếu nguồn.</b> Tỷ lệ ra khách của từng trang cần mẫu số là
+             <b>lượt xem trang</b> — khách điền form đến từ Facebook, Zalo, Google và cả gõ thẳng địa chỉ,
+             nên không lấy lượt bấm Google làm mẫu số được, làm vậy tỷ lệ vọt lên 30–50% và sai.
+             Tạo tab <span class="mono">GA4_PAGE</span> với 4 cột
+             <span class="mono">thang · duong_dan · luot_xem · phien</span>, khai GID vào khối
+             <span class="mono">GID</span> đầu file, hai cột này tự có số.`)}</div>`;
+        }
       }
       h+=`<div class="cap">Tỷ lệ ra khách chia cho phiên truy cập Analytics của đúng khoảng ngày có dữ liệu khách:
         tháng ${esc(thang)} lấy ${dN?`01 → ${dN}`:'cả tháng'} (${fi(gN.n)} ngày)${
@@ -1378,16 +1480,71 @@ function tab0(){
           <td>${/paus/i.test(r.tt||'')?'<span class="bd bd-lo">tạm dừng</span>':'<span class="bd bd-ok">đang chạy</span>'}</td></tr>`;
       });
       h+=`</tbody></table></div></div>`;
-      /* Hai chỉ số anh Hiếu yêu cầu chưa có nguồn — báo thiếu, không tính bừa. */
-      const soUsp=(M.usp||[]).length, soLog=(M.uspLog||[]).length;
-      h+=`<div style="margin-top:12px">${note('warn','⚠︎',
-        `<b>Hai chỉ số đã yêu cầu chưa có nguồn dữ liệu.</b>
-         Tỷ lệ AI nhắc tới Timona cần một bộ câu hỏi mẫu cố định và số lần quét — tab
-         <span class="mono">AI_RESPONSES</span> hiện chỉ ghi tổng lượt trích dẫn, không có mẫu số.
-         Số điểm mạnh được AI nhận diện đúng cần tab <span class="mono">USP_CHECK_LOG</span>:
-         đang có ${fi(soUsp)} điểm mạnh trong danh sách nhưng ${fi(soLog)} dòng kiểm.`)}</div>`;
     }
     h+=`</div>`;
+
+    /* ---- Độ phủ AI theo chủ đề: bộ 80 câu hỏi cố định, quét hằng tuần ---- */
+    const AT=M.aiTopic;
+    h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">4b · Độ phủ AI</span>
+        <h2>AI có nhắc Timona khi người ta hỏi về từng mảng nghề</h2>
+        <span class="src">${AT?`tháng ${esc(AT.thang)} · ${fi(AT.luot)} lượt hỏi · ${srcLink('AI_TOPIC_LOG')}`
+          :'chưa có dữ liệu quét'}</span></div>`;
+    if(!AT){
+      h+=`<div class="card">${empty('Chưa có dữ liệu quét theo chủ đề',
+        `Cần hai tab: <span class="mono">AI_TOPIC_QUESTIONS</span> (bộ câu hỏi cố định, 4 cột
+         <span class="mono">cau_id · chu_de · cau_hoi · dang_bat</span>) và
+         <span class="mono">AI_TOPIC_LOG</span> (nhật ký quét, 6 cột
+         <span class="mono">ngay_quet · cau_id · nen_tang · co_nhac · url_duoc_dan · ghi_chu</span>).
+         Khai GID vào khối <span class="mono">GID</span> đầu file là khối này tự hiện.`)}</div>`;
+    }else{
+      const dW = AT.tyWT!=null? delta(AT.tyW, AT.tyWT, 'up') : null;
+      h+=`<div class="grid g4" style="margin-bottom:14px">
+        ${kpi({lab:'Tỷ lệ AI nhắc Timona', val: AT.tyW==null?'—':fp(AT.tyW,1), cls:'k-up', tag:'có trọng số',
+               sub: dW? `${dW.html} so tháng ${esc(AT.thangTruoc)}` : 'chưa có tháng trước để so'})}
+        ${kpi({lab:'Số chủ đề AI có nhắc', val:`${fi(AT.rows.filter(r=>r.nhac>0).length)}<small> / ${fi(AT.rows.length)}</small>`,
+               sub:`${fi(AT.rows.filter(r=>r.nhac===0).length)} chủ đề chưa lần nào được nhắc`,
+               cls: AT.rows.some(r=>r.nhac===0)?'k-warn':''})}
+        ${kpi({lab:'Lượt hỏi trong tháng', val:fi(AT.luot),
+               sub:`${fi(AT.soCau)}/${fi(AT.soCauBo)} câu · quét ${fi(AT.soLan)} lần`})}
+        ${kpi({lab:'Số trang được AI dẫn', val:fi(AT.rows.reduce((a,b)=>a+b.soUrl,0)),
+               sub: AT.nenTang? esc(AT.nenTang) : ''})}
+      </div>
+      <div class="tw"><table><thead><tr><th>Chủ đề</th><th class="r">Từ khoá</th>
+        <th class="r">Lượt hỏi</th><th class="r">Lần được nhắc</th><th class="r">Tỷ lệ</th>
+        <th class="r">Tháng trước</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
+      AT.rows.forEach(r=>{
+        const d = r.tyTruoc!=null? delta(r.ty, r.tyTruoc, 'up').html : '';
+        h+=`<tr${r.nhac===0?' style="background:#FDFBF4"':''}>
+          <td><b>${esc(r.cd)}</b>${r.nhac===0?' <span class="bd bd-md">chưa được nhắc</span>':''}</td>
+          <td class="r">${fi(r.w)}</td>
+          <td class="r">${fi(r.luot)}</td><td class="r"><b>${fi(r.nhac)}</b></td>
+          <td class="r"><b>${fp(r.ty,1)}</b></td>
+          <td class="r">${r.tyTruoc!=null?fp(r.tyTruoc,1):'—'}</td>
+          <td class="r">${d}</td></tr>`;
+      });
+      h+=`<tr style="background:#F7FBFF"><td><b>Bình quân có trọng số</b></td>
+        <td class="r"><b>${fi(AT.rows.reduce((a,b)=>a+b.w,0))}</b></td>
+        <td class="r"><b>${fi(AT.luot)}</b></td><td class="r"><b>${fi(AT.nhac)}</b></td>
+        <td class="r"><b>${fp(AT.tyW,1)}</b></td>
+        <td class="r">${AT.tyWT!=null?fp(AT.tyWT,1):'—'}</td>
+        <td class="r">${AT.tyWT!=null? delta(AT.tyW,AT.tyWT,'up').html : ''}</td></tr>`;
+      h+=`</tbody></table></div>
+      <div class="cap">Bộ câu hỏi chia sàn 5 câu cho mọi chủ đề, nên chủ đề nhỏ có số lượt hỏi ngang
+        chủ đề lớn. Dòng tổng vì vậy <b>không phải phép cộng</b> mà là bình quân có trọng số theo số từ khoá thật
+        của từng chủ đề — cộng thẳng sẽ coi Giảm béo (${fi((M.kw||[]).filter(k=>k.chu_de==='Giảm béo').length)} từ khoá)
+        nặng ngang Hướng nghiệp (${fi((M.kw||[]).filter(k=>k.chu_de==='Hướng nghiệp').length)} từ khoá).
+        Cộng thô toàn bộ lượt hỏi thì ra ${fp(AT.tyTho,1)}.</div></div>`;
+    }
+
+    /* ---- Key points thương hiệu: chưa có nguồn ---- */
+    const soUsp=(M.usp||[]).length, soLog=(M.uspLog||[]).length;
+    if(!soLog){
+      h+=`<div style="margin-top:12px">${note('warn','⚠︎',
+        `<b>Chỉ số điểm mạnh được AI nhận diện đúng chưa có nguồn.</b> Hỏi thẳng về Timona thì AI chắc chắn
+         nhắc tên, nên thứ cần đo là <b>AI nói đúng và đủ bao nhiêu điểm mạnh</b> trong ${fi(soUsp)} điểm ở
+         <span class="mono">USP_CHECKLIST</span>. Tab <span class="mono">USP_CHECK_LOG</span> hiện có
+         ${fi(soLog)} dòng.`)}</div>`;
+    }
   }
 
   /* ============ 5 · TỪ KHOÁ ĐANG NHẮM ============ */
@@ -1446,9 +1603,8 @@ function tab0(){
       h+=`</tbody></table></div>
         <div class="cap">Chỉ số của từ khoá là thứ hạng. Lượt hiện ra, lượt bấm và tỷ lệ bấm nằm ở mục 6,
           vì đó là chỉ số của truy vấn — hai bộ khác nhau, chỉ trùng nhau một phần.</div>`;
-      h+=`<div style="margin-top:12px">${note('warn','⚠︎',
-        `<b>Tỷ lệ AI nhắc thương hiệu theo từ khoá chưa đo được.</b> Cần quét từng từ khoá trên các công cụ AI
-         và ghi kết quả vào tab <span class="mono">AI_RANK_LOG</span>, hiện có ${fi((M.aiRank||[]).length)} dòng.`)}</div>`;
+      /* Cảnh báo "chưa đo được tỷ lệ AI theo từ khoá" đã GỠ 17/08/2026:
+         khối 4b · Độ phủ AI làm đúng việc đó, đo theo chủ đề thay vì theo từng từ khoá. */
     }
     h+=`</div>`;
   }
