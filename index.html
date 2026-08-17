@@ -814,7 +814,10 @@ function prep(){
     ngay:dOnly(r.ngay), form:r.ten_form||'(không rõ)',
     url:(r.url_trang||'').replace(/^https?:\/\/[^/]+/,''),
     nguon:r.nguon||'', ghi:r.ghi_chu||''
-  })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.ngay)).sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  })).filter(r=>/^\d{4}-\d{2}(-\d{2})?$/.test(r.ngay)).sort((a,b)=>a.ngay.localeCompare(b.ngay));
+  /* Cột ngay nhận cả YYYY-MM-DD lẫn YYYY-MM. Dạng tháng dùng khi chỉ biết lead rơi vào
+     tháng nào, chưa có ngày cụ thể — ghi đúng mức mình biết, không bịa ngày cho đủ định dạng. */
+  M.leadCoNgay = M.lead.filter(l=>String(l.ngay).length===10);
   M.coLead = M.lead.length>0;
   if(M.coLead){
     M.leadDau=M.lead[0].ngay; M.leadCuoi=M.lead[M.lead.length-1].ngay;
@@ -1021,46 +1024,59 @@ function tab0(){
   /* ============ 1 · DATA KHÁCH ĐỂ LẠI ============ */
   {
     const thangNay = (M.months&&M.months.length)? M.months[M.months.length-1].thang : '';
-    const soLead = M.coLead ? M.lead.filter(l=>String(l.ngay||'').slice(0,7)===thangNay).length : 0;
+    const ky = M.coLead ? M.lead.filter(l=>String(l.ngay||'').slice(0,7)===thangNay) : [];
     h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">1 · Ra tiền</span>
         <h2>Khách để lại thông tin</h2>
         <span class="src">tháng ${esc(thangNay)} · ${srcLink('LEAD')}</span></div>`;
-    if(!M.coLead || !M.lead.length){
-      h+=`<div class="g4" style="margin-bottom:12px">
-        ${kpi({lab:'Khách để lại thông tin tháng này', val:'—', cls:'k-warn', sub:'chưa đổ dữ liệu vào bảng LEAD'})}
-        ${kpi({lab:'Từ trang nào', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
-        ${kpi({lab:'Cứ bao nhiêu lượt bấm ra 1 khách', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
-        ${kpi({lab:'Form nào nhiều nhất', val:'—', sub:'sẽ hiện khi có dữ liệu'})}
-      </div>
-      <div class="cap">Dán dữ liệu vào tab <span class="mono">LEAD</span> theo 5 cột
-        <span class="mono">ngay · ten_form · url_trang · nguon · ghi_chu</span> — mỗi dòng một lượt khách điền form.
-        Khối này tự hiện đủ số, không phải sửa gì thêm.</div></div>`;
+    if(!ky.length){
+      h+=`<div class="card">${empty('Chưa có dữ liệu khách để lại thông tin trong tháng này',
+        `Dán vào tab <span class="mono">LEAD</span> theo 5 cột
+         <span class="mono">ngay · ten_form · url_trang · nguon · ghi_chu</span>.
+         Cột <span class="mono">ngay</span> nhận cả dạng ngày đầy đủ lẫn dạng tháng.`)}</div></div>`;
     }else{
-      const ky = M.lead.filter(l=>String(l.ngay||'').slice(0,7)===thangNay);
-      const gTrang=new Map(), gForm=new Map(), gNguon=new Map();
+      /* chia theo nguồn và theo trang — chỉ dựng ô nào thật sự có dữ liệu */
+      const gN=new Map(), gT=new Map();
       ky.forEach(l=>{
-        const u=(l.url||'—').replace(/^https?:\/\/[^/]+/,'')||'/';
-        gTrang.set(u,(gTrang.get(u)||0)+1);
-        gForm.set(l.form||'—',(gForm.get(l.form||'—')||0)+1);
-        gNguon.set(l.nguon||'—',(gNguon.get(l.nguon||'—')||0)+1);
+        const n=(l.nguon||'').trim()||'không rõ';
+        gN.set(n,(gN.get(n)||0)+1);
+        if(l.url){ const u=l.url||'/'; gT.set(u,(gT.get(u)||0)+1); }
       });
-      const dsTrang=[...gTrang.entries()].sort((a,b)=>b[1]-a[1]);
-      const dsForm=[...gForm.entries()].sort((a,b)=>b[1]-a[1]);
-      const clickKy=p0?p0.clicks:0;
+      const dsN=[...gN.entries()].sort((a,b)=>b[1]-a[1]);
+      const dsT=[...gT.entries()].sort((a,b)=>b[1]-a[1]);
+      const qForm=ky.filter(l=>l.url).length;
+      const fbCount=gN.get('facebook')||0;
+      const htCount=gN.get('hotline')||0;
+
       h+=`<div class="g4" style="margin-bottom:12px">
-        ${kpi({lab:'Khách để lại thông tin tháng này', val:fi(ky.length), cls:'k-up', sub:`tổng mọi kỳ ${fi(M.lead.length)}`})}
-        ${kpi({lab:'Số trang mang về khách', val:fi(dsTrang.length), sub:dsTrang.length?`nhiều nhất: ${esc(dsTrang[0][0])}`:'—'})}
-        ${kpi({lab:'Cứ bao nhiêu lượt bấm ra 1 khách', val: ky.length&&clickKy? fi(Math.round(clickKy/ky.length)) : '—',
-               sub:`${fi(clickKy)} lượt bấm trong ${M.N} ngày`})}
-        ${kpi({lab:'Form nhiều nhất', val:dsForm.length?fi(dsForm[0][1]):'—', sub:dsForm.length?esc(dsForm[0][0]):'—'})}
-      </div>
-      <div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Tiêu đề</th>
-        <th class="r">Số khách</th><th class="r">Tỷ trọng</th></tr></thead><tbody>`;
-      dsTrang.slice(0,15).forEach(([u,n])=>{
-        h+=`<tr><td class="mono tt">${esc(u)}</td><td class="tt2">${esc(titleCua(u))}</td>
-          <td class="r"><b>${fi(n)}</b></td><td class="r">${fp(n/ky.length,1)}</td></tr>`;
+        ${kpi({lab:'Tổng khách tháng này', val:fi(ky.length), cls:'k-up',
+               sub:`${fi(qForm)} qua form · ${fi(ky.length-qForm)} không qua form`})}
+        ${kpi({lab:'Đến từ Facebook', val:fi(fbCount),
+               sub:`${fp(fbCount/ky.length,1)} · nhận biết qua tham số fbclid trên đường dẫn`})}
+        ${kpi({lab:'Gọi hotline', val:fi(htCount), sub:`${fp(htCount/ky.length,1)} · không qua website`})}
+        ${kpi({lab:'Chưa xác định được nguồn', val:fi(gN.get('không rõ')||gN.get('khong_ro')||0), cls:'k-warn',
+               sub:'đường dẫn không mang tham số nguồn'})}
+      </div>`;
+
+      h+=`<div class="tw"><table><thead><tr><th>Nguồn</th><th class="r">Số khách</th><th class="r">Tỷ trọng</th></tr></thead><tbody>`;
+      dsN.forEach(([n,c])=>{
+        h+=`<tr><td><b>${esc(nhanNguonLead(n))}</b></td><td class="r"><b>${fi(c)}</b></td>
+          <td class="r">${fp(c/ky.length,1)}</td></tr>`;
       });
-      h+=`</tbody></table></div></div>`;
+      h+=`</tbody></table></div>`;
+
+      if(dsT.length){
+        h+=`<h3 style="font-size:14px;margin:18px 0 8px">Trang khách điền form</h3>
+          <div class="tw"><table><thead><tr><th>Tiêu đề</th><th>Đường dẫn</th>
+          <th class="r">Số khách</th><th class="r">Tỷ trọng</th></tr></thead><tbody>`;
+        dsT.forEach(([u,c])=>{
+          h+=`<tr><td class="tt2">${esc(titleCua(u))}</td><td class="mono tt">${esc(u)}</td>
+            <td class="r"><b>${fi(c)}</b></td><td class="r">${fp(c/qForm,1)}</td></tr>`;
+        });
+        h+=`</tbody></table></div>`;
+      }
+      h+=`<div class="cap">Nguồn được suy từ tham số trên đường dẫn khách đang xem lúc điền form.
+        Đường dẫn không mang tham số thì không kết luận được là từ Google hay từ đâu — để riêng thành nhóm chưa xác định,
+        không gán bừa cho SEO.</div></div>`;
     }
   }
 
@@ -1256,6 +1272,11 @@ function tab0(){
 }
 
 /* Tra tiêu đề bài từ PAGE_META theo đường dẫn đã chuẩn hoá. */
+function nhanNguonLead(n){
+  const m={facebook:'Facebook', khong_ro:'Chưa xác định', 'không rõ':'Chưa xác định',
+           hotline:'Gọi hotline', google:'Google', zalo:'Zalo', tiktok:'TikTok'};
+  return m[String(n||'').toLowerCase()] || n;
+}
 function titleCua(u){
   if(!M._meta){
     M._meta=new Map();
