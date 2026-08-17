@@ -1412,22 +1412,38 @@ function tab0(){
             <span class="mono">CLASSIFY_RULES</span>, nhóm 4 là phần không khớp ba nhóm trên.</div>
         </div>
         <div class="card card-p">
-          <h4 style="font-size:13px;margin-bottom:10px">Chủ đề · tháng ${esc(thangQM||'—')}${(()=>{
-            const kq=thangQM?khoangQM(thangQM):null; return kq&&!kq.du? ` (mới ${kq.so}/${kq.dim} ngày)`:''; })()} · ${fi(clickT)} lượt bấm</h4>
-          ${hbarChart({items:[...gC.values()].sort((a,b)=>b.c-a.c).slice(0,9)
-             .map(o=>({k:o.k.length>20?o.k.slice(0,19)+'…':o.k, v:o.c})), lw:150, w:560, mr:46})}
+          ${(()=>{
+            const CT=chuDeTheoTrang(K.kyTrang);
+            if(!CT) return `<h4 style="font-size:13px;margin-bottom:10px">Chủ đề</h4>`+empty('Chưa phân loại được','');
+            const ngayGSC=(M.daily||[]).filter(d=>d.ngay>=CT.ky.tu && d.ngay<=CT.ky.den)
+              .reduce((a,b)=>a+b.clicks,0);
+            return `<h4 style="font-size:13px;margin-bottom:4px">Chủ đề · ${dvn(CT.ky.tu).slice(0,5)} → ${dvn(CT.ky.den).slice(0,5)} · ${fi(CT.tongC)} lượt bấm</h4>
+              <div class="cap" style="margin:0 0 8px">Phân loại theo tiêu đề trang, không theo câu tìm kiếm${
+                (()=>{ if(!ngayGSC) return '';
+                  const t=CT.tongC/ngayGSC;
+                  /* Google cộng theo trang và cộng theo ngày lệch nhau vài lượt do cách quy
+                     lượt bấm về trang đích — chênh dưới 3% là bình thường, không phải lỗi. */
+                  return t>=0.97 ? ` — khớp gần đúng tổng ${fi(ngayGSC)} lượt bấm cùng kỳ`
+                                 : ` — phủ ${fp(t,0)} tổng lượt bấm cùng kỳ`; })()}.</div>
+              ${hbarChart({items:CT.rows.slice(0,10)
+                 .map(o=>({k:o.k.length>22?o.k.slice(0,21)+'…':o.k, v:o.c})), lw:160, w:560, mr:46})}`;
+          })()}
         </div>
       </div>`;
 
       /* bảng ý định gọn, cùng khung tháng */
-      h+=`<div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Ý định · tháng ${esc(thangQM||'—')}</th>
+      h+=`<div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Ý định · tháng ${esc(thangQM||'—')} · ${fi(clickT)} lượt bấm</th>
         <th class="r">Lượt bấm</th><th class="r">Tỷ trọng</th><th class="r">Lượt hiện ra</th><th class="r">Tỷ lệ bấm</th></tr></thead><tbody>`;
       [...gY.values()].sort((a,b)=>b.c-a.c).forEach(y=>{
         h+=`<tr><td><b>${esc(y.k)}</b></td><td class="r"><b>${fi(y.c)}</b></td>
           <td class="r">${clickT?fp(y.c/clickT,1):'—'}</td><td class="r">${fi(y.i)}</td>
           <td class="r">${y.i?fp(y.c/y.i,2):'—'}</td></tr>`;
       });
-      h+=`</tbody></table></div>`;
+      h+=`</tbody></table></div>
+        <div class="cap" style="margin-bottom:14px">Ý định chỉ đọc được từ câu tìm kiếm, mà Google cắt bảng
+          truy vấn còn 1.000 dòng mỗi tháng — nên bảng này chỉ giải thích ${
+          (()=>{ const m=(M.months||[]).find(x=>x.thang===thangQM); return m&&m.clicks? fp(clickT/m.clicks,0) : '—'; })()}
+          tổng lượt bấm. Tỷ trọng giữa bốn nhóm đáng tin, số tuyệt đối thấp hơn thực tế.</div>`;
 
       /* bảng trang — kỳ tuần có đủ số */
       const kt=K.kyTrang;
@@ -1677,6 +1693,39 @@ function tab0(){
   }
 
   return h;
+}
+
+/* Phân loại chủ đề dựa trên TRANG, không dựa trên truy vấn.
+   Lý do: bảng truy vấn bị Google cắt còn 1.000 dòng mỗi kỳ nên chỉ giải thích được
+   khoảng 20% lượt bấm. Bảng trang cũng bị cắt 1.000 dòng nhưng phần bị cắt toàn là
+   trang không có lượt bấm nào, nên tổng vẫn khớp gần đúng với tổng thật.
+   Dùng chung bộ luật chu_de_query, áp lên tiêu đề bài thay vì áp lên câu tìm kiếm. */
+function chuDeTheoTrang(ky){
+  if(!ky) return null;
+  const luat=layLuat('chu_de_query');
+  if(!luat.length) return null;
+  const cache=new Map();
+  const g=new Map();
+  let tongC=0, tongI=0, coTitle=0;
+  ky.rows.forEach(r=>{
+    const c=toInt(r.clicks)||0; if(!c) return;
+    const u=String(r.url||'').replace(/^https?:\/\/[^/]+/,'')||'/';
+    const i=toInt(r.impressions)||0;
+    const tt=titleCua(u);
+    let gan;
+    if(u==='/' || u==='') gan='Trang chủ';
+    else{
+      /* Không có tiêu đề thì lấy đường dẫn thay thế — đường dẫn của site này
+         viết bằng tiếng Việt không dấu nên luật vẫn khớp được phần lớn. */
+      const src = (tt && tt!=='—') ? tt : u.replace(/[-/]/g,' ');
+      if(tt && tt!=='—') coTitle+=c;
+      gan = phanLoai(src, luat, cache).gan || 'Khác — chưa phân loại';
+    }
+    if(!g.has(gan)) g.set(gan,{k:gan,c:0,i:0,n:0});
+    const o=g.get(gan); o.c+=c; o.i+=i; o.n++;
+    tongC+=c; tongI+=i;
+  });
+  return {rows:[...g.values()].sort((a,b)=>b.c-a.c), tongC, tongI, coTitle, ky};
 }
 
 /* Tra tiêu đề bài từ PAGE_META theo đường dẫn đã chuẩn hoá. */
