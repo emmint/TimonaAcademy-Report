@@ -1241,13 +1241,16 @@ function tab0(){
           <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
         moiTrang.forEach(r=>{
           const t=titleCua(r.u);
-          const ch = r.truoc? delta(r.nay, r.truoc, 'up').html
-                   : (r.nay? '<span class="bd bd-ok">trang mới</span>' : '');
+          /* Tháng trước bằng 0 thì không có mẫu số để chia. Vẫn hiện +100% theo quy ước
+             báo cáo cho cột đồng nhất, thay vì chen chữ vào giữa cột toàn số. */
+          const ch = r.truoc
+            ? delta(r.nay, r.truoc, 'up').html
+            : (r.nay ? '<span class="chip chip-up">+100,0%</span>' : '');
           h+=`<tr><td class="tt2"><b>${esc(t==='—'? r.u : t)}</b></td>
             <td class="mono tt">${esc(r.u)}</td>
             <td class="r"><b>${r.nay?fi(r.nay):'<span style="color:var(--faint)">·</span>'}</b></td>
             <td class="r">${r.truoc?fi(r.truoc):'<span style="color:var(--faint)">·</span>'}</td>
-            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td></tr>`;
+            <td class="r">${r.nay===0? '<span class="chip chip-down">-100,0%</span>' : ch}</td></tr>`;
         });
         const formTruoc=kyT.filter(l=>l.url).length;
         h+=`<tr style="background:#F7FBFF"><td><b>Tổng điền form</b></td><td></td>
