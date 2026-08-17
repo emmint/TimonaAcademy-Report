@@ -291,13 +291,17 @@ const GID = {
   GA4_PAGE:'',
   /* Đo độ phủ AI theo chủ đề: bộ 80 câu hỏi cố định + nhật ký quét hằng tuần.
      Điền GID sau khi tạo tab là khối "AI nhắc Timona theo chủ đề" tự hiện. */
-  AI_TOPIC_QUESTIONS:'', AI_TOPIC_LOG:''
+  AI_TOPIC_QUESTIONS:'', AI_TOPIC_LOG:'',
+  /* Lượt bấm theo trang, gộp theo tháng. Có tab này thì biểu đồ chủ đề dùng chung
+     khung tháng với bốn ô chỉ số, hết cảnh một bên 14 ngày một bên 7 ngày. */
+  GSC_PAGE_MONTHLY:''
 };
 /* Cột bắt buộc của mỗi tab. Dùng để chặn một cái bẫy của Google:
    gọi gviz với tên tab không tồn tại thì nó trả về tab ĐẦU TIÊN kèm mã 200,
    không hề báo lỗi. Không kiểm cột thì dashboard sẽ nuốt nhầm dữ liệu tab khác. */
 const COT_BUOC = { GA4_DAILY:['ngay','sessions'], LEAD:['ngay'], GA4_PAGE:['thang','duong_dan'],
   AI_TOPIC_QUESTIONS:['cau_id','chu_de'], AI_TOPIC_LOG:['ngay_quet','cau_id'],
+  GSC_PAGE_MONTHLY:['thang','url'],
   GA4_EVENT:['ten_su_kien'], GA4_CHANNEL:['thang','nguon'],
   PAGE_META:['url','tieu_de'], GSC_QUERY_MONTHLY:['thang','query'] };
 const TABS = [
@@ -377,7 +381,7 @@ async function fetchTab(name, gid, bust){
 }
 /* Tab chưa chắc tồn tại — không đọc được thì bỏ qua lặng lẽ, không báo lỗi đỏ. */
 const TAB_TUY_CHON = new Set(['GA4_DAILY','LEAD','KEYWORD_RANK_SERP','GA4_PAGE',
-  'AI_TOPIC_QUESTIONS','AI_TOPIC_LOG']);
+  'AI_TOPIC_QUESTIONS','AI_TOPIC_LOG','GSC_PAGE_MONTHLY']);
 
 /* ============================================================================
    2 · ĐỌC SỐ — Sheet đang để ngôn ngữ Việt: "." ngăn nghìn, "," thập phân
@@ -1230,52 +1234,26 @@ function tab0(){
         const moiTrang=[...new Set([...gT.keys(), ...gTT.keys()])]
           .map(u=>({u, nay:gT.get(u)||0, truoc:gTT.get(u)||0}))
           .sort((a,b)=> b.nay-a.nay || b.truoc-a.truoc);
-        /* Mẫu số của tỷ lệ ra khách theo trang: lượt xem trang của GA4, vì khách điền form
-           đến từ mọi nguồn chứ không riêng Google. Lấy lượt bấm Search Console làm mẫu số
-           sẽ ra tỷ lệ 30–50%, vô lý — mẫu số đó chỉ đếm người đến từ Google. */
-        const gaP=new Map();
-        (D.GA4_PAGE||[]).forEach(r=>{
-          if(String(r.thang||'').slice(0,7)!==thang) return;
-          const u='/'+String(r.duong_dan||'').replace(/^https?:\/\/[^/]+/,'').replace(/[?#].*$/,'').replace(/^\/+|\/+$/g,'')+'/';
-          const v=toInt(r.luot_xem)||toInt(r.phien)||0;
-          gaP.set(u,(gaP.get(u)||0)+v);
-        });
-        const coGaP=gaP.size>0;
-        const chuanU=u=>'/'+String(u||'').replace(/[?#].*$/,'').replace(/^\/+|\/+$/g,'')+'/';
+        /* Hai cột "Lượt xem trang" và "Tỷ lệ ra khách" đã GỠ 17/08/2026 theo yêu cầu của Linh.
+           Muốn bật lại thì cần tab GA4_PAGE (lượt xem từng trang) làm mẫu số — không dùng
+           lượt bấm Search Console thay thế được, vì khách điền form đến từ mọi nguồn. */
         h+=`<div class="tw"><table><thead><tr><th>Trang khách điền form</th><th>Đường dẫn</th>
-          <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th>
-          <th class="r">Lượt xem trang</th><th class="r">Tỷ lệ ra khách</th></tr></thead><tbody>`;
-        let tongXem=0;
+          <th class="r">Tháng ${esc(thang)}</th><th class="r">Tháng ${esc(pm)}</th><th class="r">Thay đổi</th></tr></thead><tbody>`;
         moiTrang.forEach(r=>{
           const t=titleCua(r.u);
           const ch = r.truoc? delta(r.nay, r.truoc, 'up').html
                    : (r.nay? '<span class="bd bd-ok">trang mới</span>' : '');
-          const xem = coGaP? (gaP.get(chuanU(r.u))||0) : null;
-          if(xem) tongXem+=xem;
           h+=`<tr><td class="tt2"><b>${esc(t==='—'? r.u : t)}</b></td>
             <td class="mono tt">${esc(r.u)}</td>
             <td class="r"><b>${r.nay?fi(r.nay):'<span style="color:var(--faint)">·</span>'}</b></td>
             <td class="r">${r.truoc?fi(r.truoc):'<span style="color:var(--faint)">·</span>'}</td>
-            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td>
-            <td class="r">${xem?fi(xem):'—'}</td>
-            <td class="r"><b>${xem&&r.nay? fp(r.nay/xem,2) : '—'}</b></td></tr>`;
+            <td class="r">${r.nay===0? '<span class="bd bd-lo">không còn</span>' : ch}</td></tr>`;
         });
         const formTruoc=kyT.filter(l=>l.url).length;
         h+=`<tr style="background:#F7FBFF"><td><b>Tổng điền form</b></td><td></td>
           <td class="r"><b>${fi(qForm)}</b></td><td class="r"><b>${fi(formTruoc)}</b></td>
-          <td class="r">${formTruoc? delta(qForm, formTruoc,'up').html : ''}</td>
-          <td class="r"><b>${tongXem?fi(tongXem):'—'}</b></td>
-          <td class="r"><b>${tongXem? fp(qForm/tongXem,2) : '—'}</b></td></tr>`;
+          <td class="r">${formTruoc? delta(qForm, formTruoc,'up').html : ''}</td></tr>`;
         h+=`</tbody></table></div>`;
-        if(!coGaP){
-          h+=`<div style="margin-top:10px">${note('warn','⚠︎',
-            `<b>Hai cột cuối chưa có số vì thiếu nguồn.</b> Tỷ lệ ra khách của từng trang cần mẫu số là
-             <b>lượt xem trang</b> — khách điền form đến từ Facebook, Zalo, Google và cả gõ thẳng địa chỉ,
-             nên không lấy lượt bấm Google làm mẫu số được, làm vậy tỷ lệ vọt lên 30–50% và sai.
-             Tạo tab <span class="mono">GA4_PAGE</span> với 4 cột
-             <span class="mono">thang · duong_dan · luot_xem · phien</span>, khai GID vào khối
-             <span class="mono">GID</span> đầu file, hai cột này tự có số.`)}</div>`;
-        }
       }
       h+=`<div class="cap">Tỷ lệ ra khách chia cho phiên truy cập Analytics của đúng khoảng ngày có dữ liệu khách:
         tháng ${esc(thang)} lấy ${dN?`01 → ${dN}`:'cả tháng'} (${fi(gN.n)} ngày)${
@@ -1413,18 +1391,28 @@ function tab0(){
         </div>
         <div class="card card-p">
           ${(()=>{
-            const CT=chuDeTheoTrang(K.kyTrang);
+            /* Ưu tiên bảng trang theo tháng để khớp khung với bốn ô chỉ số phía trên.
+               Chưa có tab đó thì lùi về kỳ tuần và nói rõ là khung khác. */
+            const pmRows=(D.GSC_PAGE_MONTHLY||[]).filter(r=>String(r.thang||'').slice(0,7)===c.th);
+            const dungThang = pmRows.length>0;
+            const CT = dungThang ? chuDeTheoTrang({rows:pmRows, tu:c.th+'-01', den:K.gscCuoi, thang:c.th})
+                                 : chuDeTheoTrang(K.kyTrang);
             if(!CT) return `<h4 style="font-size:13px;margin-bottom:10px">Chủ đề</h4>`+empty('Chưa phân loại được','');
-            const ngayGSC=(M.daily||[]).filter(d=>d.ngay>=CT.ky.tu && d.ngay<=CT.ky.den)
-              .reduce((a,b)=>a+b.clicks,0);
-            return `<h4 style="font-size:13px;margin-bottom:4px">Chủ đề · ${dvn(CT.ky.tu).slice(0,5)} → ${dvn(CT.ky.den).slice(0,5)} · ${fi(CT.tongC)} lượt bấm</h4>
+            const ngayGSC = dungThang ? a.cl
+              : (M.daily||[]).filter(d=>d.ngay>=CT.ky.tu && d.ngay<=CT.ky.den).reduce((x,b)=>x+b.clicks,0);
+            const nhan = dungThang ? `01 → ${dvn(K.gscCuoi).slice(0,5)}`
+                                   : `${dvn(CT.ky.tu).slice(0,5)} → ${dvn(CT.ky.den).slice(0,5)}`;
+            return `<h4 style="font-size:13px;margin-bottom:4px">Chủ đề · ${nhan} · ${fi(CT.tongC)} lượt bấm</h4>
               <div class="cap" style="margin:0 0 8px">Phân loại theo tiêu đề trang, không theo câu tìm kiếm${
                 (()=>{ if(!ngayGSC) return '';
                   const t=CT.tongC/ngayGSC;
                   /* Google cộng theo trang và cộng theo ngày lệch nhau vài lượt do cách quy
                      lượt bấm về trang đích — chênh dưới 3% là bình thường, không phải lỗi. */
                   return t>=0.97 ? ` — khớp gần đúng tổng ${fi(ngayGSC)} lượt bấm cùng kỳ`
-                                 : ` — phủ ${fp(t,0)} tổng lượt bấm cùng kỳ`; })()}.</div>
+                                 : ` — phủ ${fp(t,0)} tổng lượt bấm cùng kỳ`; })()}.${
+                dungThang? '' : ` <b>Khung của biểu đồ này là ${CT.ky.days} ngày, khác bốn ô chỉ số phía trên (${c.d} ngày)</b> — tab
+                  <span class="mono">GSC_PAGE</span> mới có kỳ tuần. Đổ dữ liệu trang theo tháng vào
+                  <span class="mono">GSC_PAGE_MONTHLY</span> là hai khung khớp nhau.`}</div>
               ${hbarChart({items:CT.rows.slice(0,10)
                  .map(o=>({k:o.k.length>22?o.k.slice(0,21)+'…':o.k, v:o.c})), lw:160, w:560, mr:46})}`;
           })()}
@@ -1701,7 +1689,7 @@ function tab0(){
    trang không có lượt bấm nào, nên tổng vẫn khớp gần đúng với tổng thật.
    Dùng chung bộ luật chu_de_query, áp lên tiêu đề bài thay vì áp lên câu tìm kiếm. */
 function chuDeTheoTrang(ky){
-  if(!ky) return null;
+  if(!ky || !ky.rows || !ky.rows.length) return null;
   const luat=layLuat('chu_de_query');
   if(!luat.length) return null;
   const cache=new Map();
