@@ -690,9 +690,18 @@ function prep(){
   M.pagePeriods  = groupPeriods(D.GSC_PAGE);
   M.queryPeriods = groupPeriods(D.GSC_QUERY);
   M.segPeriods   = groupPeriods(D.GSC_SEGMENT);
-  M.selPage  = pickPeriod(M.pagePeriods);
-  M.selQuery = pickPeriod(M.queryPeriods);
-  M.selSeg   = pickPeriod(M.segPeriods);
+  /* Sửa 18/08/2026 — mục 1 bản rà soát chéo các tab.
+     Trước: pickPeriod() lấy kỳ có ngày kết thúc mới nhất, nên bám vào kỳ "toàn thời gian"
+     nhập tay 12/04/2025 → 11/08/2026 chỉ có 14 dòng trang và 6 dòng truy vấn.
+     Tab Tổng quan đã tránh được nhờ kyTrangDung(), tab Chất lượng traffic thì chưa —
+     hai tab đọc hai kỳ khác nhau nên ra hai con số khác nhau cho cùng một chỉ số
+     (ví dụ tỷ lệ truy vấn thương hiệu: tab 0 ra 34,4% còn tab 3 ra 0,0%).
+     Nay MỘT nguồn sự thật duy nhất về kỳ: kyTrangDung() chọn kỳ trang có đủ số,
+     truy vấn và phân khúc bám đúng khung ngày đó. Người dùng vẫn đổi kỳ được
+     bằng ô chọn ở tab Chất lượng traffic — changePagePeriod() giữ nguyên hành vi. */
+  M.selPage  = kyTrangDung();
+  M.selQuery = kyKhopKhung(M.queryPeriods, M.selPage) || pickPeriod(M.queryPeriods);
+  M.selSeg   = kyKhopKhung(M.segPeriods,   M.selPage) || pickPeriod(M.segPeriods);
 
   /* --- keyword --- */
   M.kw = (D.KEYWORD_MASTER||[]).map(r=>({
@@ -1049,7 +1058,17 @@ function pickPeriod(ps){
      Script GSC đã chuyển sang kỳ 90 ngày (độ phủ 403 từ khoá thay vì 123).
      Luật cũ ưu tiên kỳ ngắn nên khi hai lô cùng nằm trong bảng, dashboard
      bám lô 7 ngày và bỏ qua lô dài — hiện thiếu 2/3 số từ khoá. */
-  return ps[0];
+  /* Bổ sung 18/08/2026: loại kỳ "mẫu" trước khi chọn — kỳ trải nhiều tháng mà chỉ có
+     vài chục dòng chép tay (isSample). Kỳ 90 ngày do script đổ có hàng nghìn dòng nên
+     KHÔNG bị loại, luật 15/08 ở trên vẫn nguyên hiệu lực. Mọi kỳ đều là mẫu thì
+     vẫn trả kỳ mới nhất, để dashboard có số mà hiển thị thay vì trống. */
+  const that = ps.filter(p=>!isSample(p));
+  return that.length ? that[0] : ps[0];
+}
+/* Tìm trong ps kỳ trùng ĐÚNG khung ngày của kỳ mốc. Không có thì trả null để bên gọi tự lùi. */
+function kyKhopKhung(ps, moc){
+  if(!ps || !ps.length || !moc) return null;
+  return ps.find(p=>p.tu===moc.tu && p.den===moc.den) || null;
 }
 function pLabel(p){
   if(!p) return '—';
@@ -2397,15 +2416,26 @@ function tab2(){
         <span class="src">mốc ${dvn(M.serpMoc)} · ${esc(M.serpThietBi||'—')} · ${srcLink('KEYWORD_RANK_SERP')}</span></div>
       <div class="g4" style="margin-bottom:12px">
         ${kpi({lab:'Từ khoá đã quét', val:fi(M.serpTong), sub:`trong đó <b>${fi(M.serpCoHang)}</b> lọt Top 100`})}
-        ${kpi({lab:'Lọt Top 3', val:fi(M.serpBins[0].n), sub:`${M.serpCoHang?fp(M.serpBins[0].n/M.serpCoHang,1):'—'} số từ khoá có hạng`})}
-        ${kpi({lab:'Lọt Top 10', val:fi(M.serpBins[0].n+M.serpBins[1].n), sub:`${M.serpCoHang?fp((M.serpBins[0].n+M.serpBins[1].n)/M.serpCoHang,1):'—'} số từ khoá có hạng`})}
+        ${/* Sửa 18/08/2026 — mục 2 bản rà soát: mẫu số phải là TỔNG ĐÃ QUÉT, giống mục 5
+              tab Tổng quan. Trước chia cho số lọt Top 100 nên cùng một con số 225 từ khoá
+              Top 3 mà tab Tổng quan ghi 16,8% còn tab này ghi 22,6%. Từ khoá nhắm mà chưa
+              lọt Top 100 vẫn là chưa hiệu quả, không được loại khỏi mẫu số. */''}
+        ${kpi({lab:'Lọt Top 3', val:fi(M.serpBins[0].n), sub:`${M.serpTong?fp(M.serpBins[0].n/M.serpTong,1):'—'} bộ đã quét`})}
+        ${kpi({lab:'Lọt Top 10', val:fi(M.serpBins[0].n+M.serpBins[1].n), sub:`${M.serpTong?fp((M.serpBins[0].n+M.serpBins[1].n)/M.serpTong,1):'—'} bộ đã quét`})}
         ${kpi({lab:'Không thấy trong Top 100', val:fi(M.serpTong-M.serpCoHang), cls:'k-warn', sub:`${fp((M.serpTong-M.serpCoHang)/M.serpTong,1)} bộ đã quét`})}
       </div>
-      <div class="tw"><table><thead><tr><th>Nhóm thứ hạng</th><th class="r">Số từ khoá</th><th class="r">Tỉ trọng</th></tr></thead><tbody>`;
+      <div class="tw"><table><thead><tr><th>Nhóm thứ hạng</th><th class="r">Số từ khoá</th>
+        <th class="r">Tỉ trọng bộ đã quét</th></tr></thead><tbody>`;
     M.serpBins.forEach(b=>{
       h+=`<tr><td><b>${b.nhan}</b></td><td class="r">${fi(b.n)}</td>
-        <td class="r">${M.serpCoHang?fp(b.n/M.serpCoHang,1):'—'}</td></tr>`;
+        <td class="r">${M.serpTong?fp(b.n/M.serpTong,1):'—'}</td></tr>`;
     });
+    /* Dòng chưa lọt Top 100 thêm 18/08/2026: có nó thì cột tỉ trọng cộng lại đúng 100%,
+       không còn cảnh người đọc tự hỏi phần thiếu đi đâu. */
+    h+=`<tr><td>Không thấy trong Top 100</td><td class="r">${fi(M.serpTong-M.serpCoHang)}</td>
+        <td class="r">${M.serpTong?fp((M.serpTong-M.serpCoHang)/M.serpTong,1):'—'}</td></tr>
+      <tr style="background:#F7FBFF"><td><b>Tổng bộ đã quét</b></td><td class="r"><b>${fi(M.serpTong)}</b></td>
+        <td class="r"><b>100,0%</b></td></tr>`;
     h+=`</tbody></table></div>`;
     if(M.serpBD){
       h+=`<div class="cap">So với mốc ${dvn(M.serpTruoc)}: lên hạng <b>${fi(M.serpBD.len)}</b> ·
@@ -2603,9 +2633,13 @@ function tab3(){
   h+=`<div class="sec"><div class="sec-h"><span class="eyebrow">Câu hỏi của anh Hiếu</span>
       <h2>Traffic này có ra tiền không?</h2>
       <span class="src">${pLabel(M.selPage)} · ${srcLink('GSC_PAGE')}</span></div>`;
-  if(isSample(M.selPage)) h+=`<div class="mb">${noteOff('warn','⚠︎',
+  /* Bật lại 18/08/2026: đây là ghi chú BÁO LỖI DỮ LIỆU, không phải ghi chú giảng giải,
+     nên nằm trong diện được giữ theo điều A5. Mặc định kỳ đã tự chọn đúng, cảnh báo này
+     chỉ hiện khi người dùng tự chọn kỳ mẫu ở ô bên dưới — có nó thì không tái phát
+     cảnh đọc số của 14 dòng chép tay mà tưởng là cả kỳ. */
+  if(isSample(M.selPage)) h+=`<div class="mb">${note('warn','⚠︎',
     `Kỳ đang chọn chỉ là <b>mẫu ${M.selPage.n} dòng top</b> chép từ bản export gốc — <b>không đủ để tính tỷ lệ %</b>.
-     Hãy chọn một kỳ tuần đầy đủ ở ô bên dưới.`)}</div>`;
+     Hãy chọn một kỳ tuần đầy đủ ở ô bên trên.`)}</div>`;
 
   h+=`<div class="ctl"><label style="font-size:12.5px;color:var(--muted);font-weight:600">Kỳ dữ liệu</label>
      <select id="pg-period" onchange="changePagePeriod(this.value)">
@@ -2620,7 +2654,16 @@ function tab3(){
     ${kpi({lab:'Người tìm thẳng tên Timona', val: qs.tot.c? fp(qs.brand.c/qs.tot.c,1):'—', sub:`${fi(qs.brand.c)} lượt · đã biết Timona từ trước`})}
     ${kpi({lab:'Người tìm việc ngoài ngành', val: qs.tot.c? fp(qs.khac.c/qs.tot.c,1):'—',
            cls:'k-warn', sub:`${fi(qs.khac.c)} lượt · không tìm chỗ học nghề`})}
-  </div>`;
+  </div>
+  ${/* Thêm 18/08/2026: bốn ô này chia hai mẫu số khác nhau — hai ô trái chia tổng click
+       theo TRANG, hai ô phải chia tổng click theo TRUY VẤN. Google ẩn danh phần lớn
+       truy vấn nên hai tổng lệch nhau nhiều lần. Không nói ra thì người đọc cộng ngang
+       bốn ô và ra kết luận sai. Đây là ghi chú độ phủ dữ liệu, thuộc diện giữ theo A5. */''}
+  <div class="cap" style="margin:-8px 0 16px">Kỳ ${esc(pLabel(M.selPage))}.
+    Hai ô bên trái chia cho <b>${fi(ps.tot.c)}</b> lượt click bảng trang; hai ô bên phải chia cho
+    <b>${fi(qs.tot.c)}</b> lượt click bảng truy vấn${
+      ps.tot.c && qs.tot.c ? ` — bảng truy vấn chỉ giải thích được <b>${fp(qs.tot.c/ps.tot.c,0)}</b> lượt click,
+      phần còn lại Google ẩn danh` : ''}. <b>Không cộng ngang bốn ô.</b></div>`;
 
   /* --- thanh xếp chồng --- */
   h+=`<div class="card card-p" style="margin-bottom:16px">
@@ -2915,13 +2958,26 @@ function tab5(){
   </div>`;
 
   /* --- việc chờ quyết --- */
+  /* Sửa 18/08/2026 — mục 3 bản rà soát: dòng "mã ngành và thuế spa" trước ghi cứng
+     1.705 lượt click, là số của cửa sổ dữ liệu cũ và không tự cập nhật. Cùng lúc đó
+     tab Truy vấn & Ý định tính động ra 54 click. Nay lấy chung một phép tính với tab kia:
+     đọc qmData() nên tự bám cửa sổ SO_THANG, đổi 6 thành 12 là hai nơi cùng đổi theo.
+     Tính TRƯỚC khi mở chuỗi h+=`...` để không chèn code vào giữa template literal (bẫy F5). */
+  const _qmCho = qmData();
+  const _cdCho = gopTheo(_qmCho.rows, 'cd');
+  const _cCho  = ['Pháp lý & mã ngành','Thuế & kế toán spa']
+    .reduce((a,k)=>a + ((_cdCho.find(x=>x.k===k)||{c:0}).c), 0);
+  const _tCho  = _cdCho.reduce((a,x)=>a+x.c, 0);
+
   h+=`<div class="sec"><div class="sec-h"><h3>Việc chờ người khác quyết</h3></div>
     <div class="card card-p" style="font-size:13px;line-height:1.75">
       <ol style="margin:0;padding-left:20px">
         <li>Nội dung điểm khác biệt số 22 đang trống, bản gốc chỉ có tiêu đề — <b>chờ sếp</b>.</li>
         <li>Câu điểm khác biệt số 21 bị cụt ở bản gốc (“…sân chơi cho các”) — <b>chờ sếp bổ sung</b>.</li>
         <li>URL <span class="mono">/hoc-nghe-gi-hot-nhat-hien-nay/</span> trả 404 — gỡ nhầm hay có chủ đích, <b>Linh xác minh</b>.</li>
-        <li>Hai nhóm nội dung mã ngành và thuế spa kéo 1.705 lượt click nhưng người đọc là chủ cơ sở, không phải người tìm chỗ học — giữ, cài phễu, hay bỏ, <b>chờ anh Hiếu</b>.</li>
+        <li>Hai nhóm nội dung mã ngành và thuế spa kéo <b>${fi(_cCho)}</b> lượt click
+          ${_tCho?`(${fp(_cCho/_tCho,1)} lượt click bảng truy vấn)`:''} trong ${_qmCho.thangs.length} tháng gần nhất —
+          người đọc là chủ cơ sở, không phải người tìm chỗ học. Giữ, cài phễu, hay bỏ, <b>chờ anh Hiếu</b>.</li>
         <li>Có bổ sung từ khoá nhóm B và cụm mẹ &amp; bé vào bảng không — <b>chờ anh Hiếu</b>.</li>
       </ol>
     </div></div>`;
